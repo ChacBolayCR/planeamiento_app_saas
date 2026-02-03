@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'services/transaction_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/add_transaction_screen.dart';
 import 'screens/analysis_screen.dart';
@@ -9,18 +12,17 @@ class BudgetApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Budget App',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.indigo,
-        scaffoldBackgroundColor: Colors.grey[100],
+    return ChangeNotifierProvider(
+      create: (_) => TransactionProvider(),
+      child: const MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: MainNavigation(),
       ),
-      home: const MainNavigation(),
     );
   }
 }
 
+// 👇 AQUÍ ESTÁ MAINNAVIGATION (no va en HomeScreen)
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
@@ -44,8 +46,6 @@ class _MainNavigationState extends State<MainNavigation> {
       body: _screens[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        selectedItemColor: Colors.indigo,
-        unselectedItemColor: Colors.grey,
         onTap: (index) {
           setState(() => _currentIndex = index);
         },
