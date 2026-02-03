@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
-import 'services/transaction_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/add_transaction_screen.dart';
 import 'screens/analysis_screen.dart';
@@ -12,17 +9,13 @@ class BudgetApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => TransactionProvider(),
-      child: const MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: MainNavigation(),
-      ),
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: MainNavigation(),
     );
   }
 }
 
-// 👇 AQUÍ ESTÁ MAINNAVIGATION (no va en HomeScreen)
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
@@ -55,7 +48,7 @@ class _MainNavigationState extends State<MainNavigation> {
             label: 'Inicio',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle),
+            icon: Icon(Icons.add),
             label: 'Registrar',
           ),
           BottomNavigationBarItem(
