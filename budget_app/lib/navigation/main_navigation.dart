@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
-import '../screens/home_screen.dart';
-import '../screens/expenses_screen.dart';
-import '../screens/profile_screen.dart';
+import '../screens/dashboard/dashboard_screen.dart';
+import '../screens/expenses/expenses_screen.dart';
+import '../screens/profiles/profile_screen.dart';
+
+
 
 class MainNavigation extends StatefulWidget {
+  const MainNavigation({super.key});
+
   @override
   State<MainNavigation> createState() => _MainNavigationState();
 }
@@ -11,30 +15,28 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    HomeScreen(),
-    ExpensesScreen(),
-    ProfileScreen(),
-  ];
+  final screens = const [
+  DashboardScreen(),
+  ExpensesScreen(),
+  ProfileScreen(),s
+];
+
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: screens[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        onTap: (index) => setState(() => _currentIndex = index),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
             label: 'Resumen',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.money),
+            icon: Icon(Icons.receipt_long),
             label: 'Gastos',
           ),
           BottomNavigationBarItem(
