@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../repositories/expenses_repository.dart';
+import 'package:provider/provider.dart';
+
+import '../../providers/budget_provider.dart';
 import '../../models/expense.dart';
 
 class AddExpenseModal extends StatefulWidget {
@@ -12,53 +14,112 @@ class AddExpenseModal extends StatefulWidget {
 class _AddExpenseModalState extends State<AddExpenseModal> {
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
+
   String _selectedCategory = 'General';
+
+  final List<String> _categories = [
+    'General',
+    'Servicios',
+    'Alquiler',
+    'Comida',
+    'Transporte',
+    'Marketing',
+    'Entretenimiento',
+  ];
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  void _saveExpense() {
+    final title = _titleController.text.trim();
+    final amountText = _amountController.text.trim();
+
+    if (title.isEmpty || amountText.isEmpty) return;
+
+    final amount = double.tryParse(amountText);
+    if (amount == null || amount <= 0) return;
+
+    final expense = Expense(
+      title: title,
+      category: _selectedCategory,
+      amount: amount,
+      date: DateTime.now(),
+    );
+
+    context.read<BudgetProvider>().addExpense(expense);
+
+    Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const Text(
+            'Nuevo gasto',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+
           TextField(
             controller: _titleController,
-            decoration: const InputDecoration(labelText: 'Descripción'),
+            decoration: const InputDecoration(
+              labelText: 'Descripción',
+              border: OutlineInputBorder(),
+            ),
           ),
           const SizedBox(height: 12),
+
           TextField(
             controller: _amountController,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Monto'),
+            decoration: const InputDecoration(
+              labelText: 'Monto',
+              border: OutlineInputBorder(),
+            ),
           ),
           const SizedBox(height: 12),
+
           DropdownButtonFormField<String>(
             value: _selectedCategory,
-            items: const [
-              DropdownMenuItem(value: 'General', child: Text('General')),
-              DropdownMenuItem(value: 'Fijo', child: Text('Fijo')),
-              DropdownMenuItem(value: 'Variable', child: Text('Variable')),
-            ],
+            decoration: const InputDecoration(
+              labelText: 'Categoría',
+              border: OutlineInputBorder(),
+            ),
+            items: _categories
+                .map(
+                  (category) => DropdownMenuItem(
+                    value: category,
+                    child: Text(category),
+                  ),
+                )
+                .toList(),
             onChanged: (value) {
-              setState(() {
-                _selectedCategory = value!;
-              });
+              if (value != null) {
+                setState(() => _selectedCategory = value);
+              }
             },
-            decoration: const InputDecoration(labelText: 'Categoría'),
           ),
+
           const SizedBox(height: 20),
+
           ElevatedButton(
-            onPressed: () {
-              ExpensesRepository.instance.addExpense(
-                Expense(
-                  title: _titleController.text,
-                  category: _selectedCategory,
-                  amount: double.parse(_amountController.text),
-                ),
-              );
-              Navigator.pop(context);
-            },
-            child: const Text('Agregar gasto'),
+            onPressed: _saveExpense,
+            child: const Text('Guardar gasto'),
           ),
         ],
       ),

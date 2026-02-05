@@ -5,6 +5,10 @@ class BudgetProvider extends ChangeNotifier {
   double _monthlyBudget = 2000;
   final List<Expense> _expenses = [];
 
+  BudgetProvider() {
+    debugPrint('🔥 BudgetProvider creado: ${hashCode}');
+  }
+
   double get monthlyBudget => _monthlyBudget;
   List<Expense> get expenses => List.unmodifiable(_expenses);
 

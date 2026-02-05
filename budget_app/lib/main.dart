@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'screens/home/home_screen.dart';
+
 import 'providers/budget_provider.dart';
-import 'screens/dashboard/dashboard_screen.dart';
+import 'navigation/main_navigation.dart';
 
 void main() {
   runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(
-          create: (_) => BudgetProvider(),
-        ),
-      ],
+    ChangeNotifierProvider(
+      create: (_) => BudgetProvider(),
       child: const MyApp(),
     ),
   );
@@ -24,13 +20,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Budget App',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.blue,
-      ),
-      home: const HomeScreen(),
-
+      home: const MainNavigation(),
     );
   }
 }
