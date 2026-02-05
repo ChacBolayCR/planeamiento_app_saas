@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'add_expenses_modal.dart';
+import '../../repositories/expenses_repository.dart';
 import '../../models/expense.dart';
-
+import 'add_expenses_modal.dart';
 
 class ExpensesScreen extends StatefulWidget {
   const ExpensesScreen({super.key});
@@ -11,126 +11,48 @@ class ExpensesScreen extends StatefulWidget {
 }
 
 class _ExpensesScreenState extends State<ExpensesScreen> {
-  final List<Expense> _expenses = [
-    Expense(title: 'Alquiler oficina', category: 'Fijo', amount: 850),
-    Expense(title: 'Publicidad', category: 'Marketing', amount: 230),
-    Expense(title: 'Internet', category: 'Servicios', amount: 60),
-  ];
-
-  void _addExpense(Expense expense) {
-    setState(() {
-      _expenses.add(expense);
-    });
-  }
+  final ExpensesRepository repo = ExpensesRepository.instance;
 
   @override
   Widget build(BuildContext context) {
+    final expenses = repo.expenses;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      appBar: AppBar(title: const Text('Gastos')),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final result = await showModalBottomSheet<Expense>(
+          await showModalBottomSheet(
             context: context,
             isScrollControlled: true,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-            ),
             builder: (_) => const AddExpenseModal(),
           );
-
-          if (result != null) {
-            _addExpense(result);
-          }
+          setState(() {}); // 🔥 fuerza refresco
         },
         child: const Icon(Icons.add),
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Gastos',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Controla en qué se va tu dinero',
-                style: TextStyle(color: Colors.grey),
-              ),
-              const SizedBox(height: 24),
-
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _expenses.length,
-                  itemBuilder: (context, index) {
-                    final expense = _expenses[index];
-                    return _ExpenseTile(
-                      title: expense.title,
-                      category: expense.category,
-                      amount: expense.amount,
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      body: expenses.isEmpty
+          ? const Center(child: Text('No hay gastos registrados'))
+          : ListView.builder(
+              itemCount: expenses.length,
+              itemBuilder: (context, index) {
+                return _ExpenseTile(expense: expenses[index]);
+              },
+            ),
     );
   }
 }
 
 class _ExpenseTile extends StatelessWidget {
-  final String title;
-  final String category;
-  final double amount;
+  final Expense expense;
 
-  const _ExpenseTile({
-    required this.title,
-    required this.category,
-    required this.amount,
-  });
+  const _ExpenseTile({required this.expense});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                category,
-                style: const TextStyle(color: Colors.grey),
-              ),
-            ],
-          ),
-          Text(
-            '- \$${amount.toStringAsFixed(2)}',
-            style: const TextStyle(
-              color: Colors.red,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
+    return ListTile(
+      title: Text(expense.title),
+      subtitle: Text(expense.category),
+      trailing: Text('\$${expense.amount.toStringAsFixed(2)}'),
     );
   }
 }
