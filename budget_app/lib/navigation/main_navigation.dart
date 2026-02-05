@@ -18,7 +18,7 @@ class _MainNavigationState extends State<MainNavigation> {
   final screens = const [
   DashboardScreen(),
   ExpensesScreen(),
-  ProfileScreen(),s
+  ProfileScreen(),
 ];
 
 

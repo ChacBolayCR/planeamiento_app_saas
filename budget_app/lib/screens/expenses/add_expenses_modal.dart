@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/expense.dart';
+import '../../data/expenses_repository.dart';
+import '../../models/expense.dart';
+
 
 class AddExpenseModal extends StatefulWidget {
   const AddExpenseModal({super.key});
@@ -11,7 +14,8 @@ class AddExpenseModal extends StatefulWidget {
 class _AddExpenseModalState extends State<AddExpenseModal> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
-
+  
+  String _selectedCategory = 'General';
   String _category = 'Fijo';
 
   @override
@@ -74,25 +78,21 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
 
           // Categoría
           DropdownButtonFormField<String>(
-            value: _category,
-            items: const [
-              DropdownMenuItem(value: 'Fijo', child: Text('Fijo')),
-              DropdownMenuItem(value: 'Marketing', child: Text('Marketing')),
-              DropdownMenuItem(value: 'Servicios', child: Text('Servicios')),
-              DropdownMenuItem(value: 'Otros', child: Text('Otros')),
-            ],
-            onChanged: (value) {
-              setState(() {
-                _category = value!;
-              });
-            },
-            decoration: InputDecoration(
-              labelText: 'Categoría',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
+  value: _selectedCategory,
+  items: const [
+    DropdownMenuItem(value: 'Fijo', child: Text('Fijo')),
+    DropdownMenuItem(value: 'Variable', child: Text('Variable')),
+    DropdownMenuItem(value: 'Marketing', child: Text('Marketing')),
+    DropdownMenuItem(value: 'Servicios', child: Text('Servicios')),
+  ],
+  onChanged: (value) {
+    setState(() {
+      _selectedCategory = value!;
+    });
+  },
+  decoration: const InputDecoration(labelText: 'Categoría'),
+),
+
 
           const SizedBox(height: 20),
 
@@ -100,22 +100,20 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
-                if (_titleController.text.isEmpty ||
-                    _amountController.text.isEmpty) {
-                  return;
-                }
+  onPressed: () {
+    final expense = Expense(
+      title: _titleController.text,
+      amount: double.parse(_amountController.text),
+      category: _selectedCategory,
+      date: DateTime.now(),
+    );
 
-                final expense = Expense(
-                  title: _titleController.text,
-                  category: _category,
-                  amount: double.tryParse(_amountController.text) ?? 0,
-                );
+    ExpensesRepository.instance.addExpense(expense);
 
-                Navigator.pop(context, expense);
-              },
-              child: const Text('Guardar gasto'),
-            ),
+    Navigator.pop(context);
+  },
+  child: const Text('Agregar'),
+),
           ),
         ],
       ),
