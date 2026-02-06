@@ -13,21 +13,23 @@ class Expense {
     required this.date,
   }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString();
 
-  factory Expense.fromJson(Map<String, dynamic> json) {
-    return Expense(
-      id: json['id'],
-      title: json['title'],
-      category: json['category'],
-      amount: (json['amount'] as num).toDouble(),
-      date: DateTime.parse(json['date']),
-    );
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'category': category,
+      'amount': amount,
+      'date': date.toIso8601String(),
+    };
   }
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'category': category,
-        'amount': amount,
-        'date': date.toIso8601String(),
-      };
+  factory Expense.fromMap(Map<String, dynamic> map) {
+    return Expense(
+      id: map['id'],
+      title: map['title'],
+      category: map['category'],
+      amount: map['amount'],
+      date: DateTime.parse(map['date']),
+    );
+  }
 }

@@ -7,11 +7,12 @@ import 'navigation/main_navigation.dart';
 void main() {
   runApp(
     ChangeNotifierProvider(
-      create: (_) => BudgetProvider(),
+      create: (_) => BudgetProvider()..loadData(),
       child: const MyApp(),
     ),
   );
 }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

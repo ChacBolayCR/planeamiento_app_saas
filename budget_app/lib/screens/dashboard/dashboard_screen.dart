@@ -9,12 +9,13 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final budget = context.watch<BudgetProvider>();
 
+    final symbol = budget.currencySymbol;
     final total = budget.monthlyBudget;
     final spent = budget.totalExpenses;
     final remaining = budget.remainingBudget;
 
     final double percent =
-    total == 0 ? 0.0 : (spent / total).clamp(0.0, 1.0).toDouble();
+        total == 0 ? 0.0 : (spent / total).clamp(0.0, 1.0);
 
     Color progressColor;
     if (percent < 0.7) {
@@ -36,6 +37,7 @@ class DashboardScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _BudgetHeader(
+              symbol: symbol,
               total: total,
               spent: spent,
               remaining: remaining,
@@ -74,11 +76,13 @@ class DashboardScreen extends StatelessWidget {
 }
 
 class _BudgetHeader extends StatelessWidget {
+  final String symbol;
   final double total;
   final double spent;
   final double remaining;
 
   const _BudgetHeader({
+    required this.symbol,
     required this.total,
     required this.spent,
     required this.remaining,
@@ -98,18 +102,21 @@ class _BudgetHeader extends StatelessWidget {
             _RowItem(
               label: 'Presupuesto mensual',
               value: total,
+              symbol: symbol,
               color: Colors.blue,
             ),
             const SizedBox(height: 12),
             _RowItem(
               label: 'Gastos',
               value: spent,
+              symbol: symbol,
               color: Colors.red,
             ),
             const Divider(height: 32),
             _RowItem(
               label: 'Disponible',
               value: remaining,
+              symbol: symbol,
               color: remaining >= 0 ? Colors.green : Colors.red,
               bold: true,
             ),
@@ -123,12 +130,14 @@ class _BudgetHeader extends StatelessWidget {
 class _RowItem extends StatelessWidget {
   final String label;
   final double value;
+  final String symbol;
   final Color color;
   final bool bold;
 
   const _RowItem({
     required this.label,
     required this.value,
+    required this.symbol,
     required this.color,
     this.bold = false,
   });
@@ -146,7 +155,7 @@ class _RowItem extends StatelessWidget {
           ),
         ),
         Text(
-          '\$${value.toStringAsFixed(2)}',
+          '$symbol${value.toStringAsFixed(2)}',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../providers/budget_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -8,18 +11,56 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final _salaryController = TextEditingController();
-  final _goalController = TextEditingController();
+  late TextEditingController _budgetController;
+  String _selectedCurrency = 'USD';
+
+  final List<Map<String, String>> _currencies = [
+    {'code': 'USD', 'label': 'USD - Dólar'},
+    {'code': 'CRC', 'label': 'CRC - Colón'},
+    {'code': 'EUR', 'label': 'EUR - Euro'},
+    {'code': 'MXN', 'label': 'MXN - Peso MX'},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    final provider = context.read<BudgetProvider>();
+
+    _budgetController = TextEditingController(
+      text: provider.monthlyBudget.toStringAsFixed(0),
+    );
+
+    _selectedCurrency = provider.currencyCode;
+  }
 
   @override
   void dispose() {
-    _salaryController.dispose();
-    _goalController.dispose();
+    _budgetController.dispose();
     super.dispose();
+  }
+
+  void _saveProfile() {
+    final provider = context.read<BudgetProvider>();
+
+    final budget = double.tryParse(_budgetController.text);
+    if (budget == null || budget <= 0) return;
+
+    provider.setMonthlyBudget(budget);
+    provider.setCurrency(_selectedCurrency);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Perfil actualizado'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final symbol = context.watch<BudgetProvider>().currencySymbol;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       body: SafeArea(
@@ -37,17 +78,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Configura tus datos financieros',
+                'Configura tu presupuesto y moneda',
                 style: TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 24),
 
+              /// PRESUPUESTO
               TextField(
-                controller: _salaryController,
+                controller: _budgetController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
-                  labelText: 'Salario mensual',
-                  prefixText: '\$ ',
+                  labelText: 'Presupuesto mensual',
+                  prefixText: '$symbol ',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -56,32 +98,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               const SizedBox(height: 16),
 
-              TextField(
-                controller: _goalController,
-                keyboardType: TextInputType.number,
+              /// MONEDA
+              DropdownButtonFormField<String>(
+                value: _selectedCurrency,
                 decoration: InputDecoration(
-                  labelText: 'Meta de ahorro mensual',
-                  prefixText: '\$ ',
+                  labelText: 'Moneda',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
+                items: _currencies
+                    .map(
+                      (c) => DropdownMenuItem(
+                        value: c['code'],
+                        child: Text(c['label']!),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _selectedCurrency = value);
+                  }
+                },
               ),
 
-              const SizedBox(height: 24),
+              const Spacer(),
 
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Más adelante guardaremos estado global
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Datos guardados (temporalmente)'),
-                      ),
-                    );
-                  },
-                  child: const Text('Guardar'),
+                  onPressed: _saveProfile,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Guardar cambios',
+                    style: TextStyle(fontSize: 16),
+                  ),
                 ),
               ),
             ],

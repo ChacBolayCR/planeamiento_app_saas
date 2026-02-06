@@ -11,7 +11,6 @@ class ExpensesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final budget = context.watch<BudgetProvider>();
-    debugPrint('🧾 Expenses provider: ${budget.hashCode}');
     final expenses = budget.expenses;
 
     return Scaffold(
@@ -63,6 +62,7 @@ class _ExpenseTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.read<BudgetProvider>();
+    final symbol = provider.currencySymbol;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -86,7 +86,7 @@ class _ExpenseTile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '\$${expense.amount.toStringAsFixed(2)}',
+              '$symbol${expense.amount.toStringAsFixed(2)}',
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
@@ -132,4 +132,3 @@ class _ExpenseTile extends StatelessWidget {
     );
   }
 }
-
