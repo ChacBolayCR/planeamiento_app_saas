@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/budget_provider.dart';
 import '../../widgets/kiki_message_card.dart';
 
+
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
