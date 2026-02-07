@@ -1,114 +1,80 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../models/expense.dart';
 
 class BudgetProvider extends ChangeNotifier {
-  // =====================
-  // ESTADO
-  // =====================
-  double _monthlyBudget = 2000;
-  final List<Expense> _expenses = [];
-
-  String _currencyCode = 'USD';
-
-  final Map<String, String> _currencySymbols = {
-    'USD': '\$',
-    'CRC': '₡',
-    'EUR': '€',
-    'MXN': '\$',
-  };
-
-  // =====================
-  // KEYS STORAGE
-  // =====================
-  static const _budgetKey = 'monthly_budget';
-  static const _currencyKey = 'currency_code';
-  static const _expensesKey = 'expenses';
-
-  // =====================
-  // GETTERS
-  // =====================
+  /// 💰 Presupuesto mensual
+  double _monthlyBudget = 1000;
   double get monthlyBudget => _monthlyBudget;
+
+  /// 💱 Moneda
+  String _currencyCode = 'CRC';
+  String get currencyCode => _currencyCode;
+
+  String get currencySymbol =>
+      _currencyCode == 'USD' ? '\$' : '₡';
+
+  /// 📦 Gastos
+  final List<Expense> _expenses = [];
   List<Expense> get expenses => List.unmodifiable(_expenses);
 
-  String get currencyCode => _currencyCode;
-  String get currencySymbol =>
-      _currencySymbols[_currencyCode] ?? '\$';
-
-  double get totalExpenses =>
-      _expenses.fold(0, (sum, e) => sum + e.amount);
-
-  double get remainingBudget =>
-      _monthlyBudget - totalExpenses;
-
-  // =====================
-  // INIT / LOAD
-  // =====================
-  Future<void> loadData() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    _monthlyBudget = prefs.getDouble(_budgetKey) ?? 2000;
-    _currencyCode = prefs.getString(_currencyKey) ?? 'USD';
-
-    final expensesJson = prefs.getStringList(_expensesKey);
-    if (expensesJson != null) {
-      _expenses
-        ..clear()
-        ..addAll(
-          expensesJson
-              .map((e) => Expense.fromMap(jsonDecode(e)))
-              .toList(),
-        );
-    }
-
-    notifyListeners();
-  }
-
-  // =====================
-  // SAVE
-  // =====================
-  Future<void> _saveData() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    await prefs.setDouble(_budgetKey, _monthlyBudget);
-    await prefs.setString(_currencyKey, _currencyCode);
-
-    final expensesJson =
-        _expenses.map((e) => jsonEncode(e.toMap())).toList();
-    await prefs.setStringList(_expensesKey, expensesJson);
-  }
-
-  // =====================
-  // SETTERS
-  // =====================
+  /// =======================
+  /// CONFIGURACIÓN
+  /// =======================
   void setMonthlyBudget(double value) {
     _monthlyBudget = value;
-    _saveData();
     notifyListeners();
   }
 
   void setCurrency(String code) {
-    if (_currencySymbols.containsKey(code)) {
-      _currencyCode = code;
-      _saveData();
-      notifyListeners();
-    }
+    _currencyCode = code;
+    notifyListeners();
   }
 
-  // =====================
-  // EXPENSES
-  // =====================
+  /// =======================
+  /// GESTIÓN DE GASTOS
+  /// =======================
   void addExpense(Expense expense) {
     _expenses.add(expense);
-    _saveData();
     notifyListeners();
   }
 
   void removeExpense(String id) {
     _expenses.removeWhere((e) => e.id == id);
-    _saveData();
     notifyListeners();
+  }
+
+  /// =======================
+  /// CÁLCULOS
+  /// =======================
+  double get totalSpent {
+    return _expenses.fold(0, (sum, e) => sum + e.amount);
+  }
+
+  double totalByCategory(String category) {
+    return _expenses
+        .where((e) => e.category == category)
+        .fold(0, (sum, e) => sum + e.amount);
+  }
+
+  /// Para barras de progreso
+  double categoryPercent(String category) {
+    if (_monthlyBudget <= 0) return 0;
+    final total = totalByCategory(category);
+    return (total / _monthlyBudget).clamp(0.0, 1.0);
+  }
+
+  /// Para Kiki 🐱
+  String getDominantCategory() {
+    final Map<String, double> totals = {};
+
+    for (final e in _expenses) {
+      totals[e.category] = (totals[e.category] ?? 0) + e.amount;
+    }
+
+    if (totals.isEmpty) return '';
+
+    return totals.entries
+        .reduce((a, b) => a.value > b.value ? a : b)
+        .key;
   }
 }
