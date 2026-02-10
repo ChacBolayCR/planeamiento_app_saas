@@ -1,9 +1,6 @@
-import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../home/home_screen.dart';
-
-import '../../widgets/kiki_avatar.dart';
-import '../dashboard/dashboard_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,54 +10,58 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  late String selectedImage;
+
+  final List<String> kikiImages = [
+    'assets/images/kiki/kiki_idle.png',
+    'assets/images/kiki/kiki_play.png',
+    'assets/images/kiki/kiki_main.png',
+    'assets/images/kiki/kiki_happy.png',
+  ];
+
   @override
   void initState() {
     super.initState();
 
-    Timer(const Duration(seconds: 3), () {
-        Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-                builder: (_) => const HomeScreen(),
-            ),
-        );
+    selectedImage = kikiImages[Random().nextInt(kikiImages.length)];
+
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => HomeScreen()),
+      );
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // 🐾 Kiki
-              const KikiAvatar(state: KikiState.idle),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              selectedImage,
+              width: 180,
+            ),
 
-              const SizedBox(height: 32),
+            const SizedBox(height: 24),
 
-              // 💬 Eslogan
-              const Text(
-                'La libertad empieza con educación financiera 💳',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+            Text(
+              'Kiki Finance',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
 
-              const SizedBox(height: 24),
+            const SizedBox(height: 8),
 
-              // ⏳ Loader
-              CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white.withOpacity(0.8),
-              ),
-            ],
-          ),
+            const Text(
+              'La libertad empieza con educación financiera 💳',
+              style: TextStyle(color: Colors.grey),
+            ),
+
+          ],
         ),
       ),
     );

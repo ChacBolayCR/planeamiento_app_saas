@@ -1,51 +1,38 @@
 import 'package:flutter/material.dart';
-import 'kiki_avatar.dart';
+
+enum KikiMood {
+  happy,
+  neutral,
+  warning,
+}
 
 class KikiMessageCard extends StatelessWidget {
-  final String? category;
-
+  final KikiMood mood;
+  final String message;
 
   const KikiMessageCard({
     super.key,
-    this.category,
+    required this.mood,
+    required this.message,
   });
 
-  /*String _message() {
-    if (percentUsed == 0) {
-      return 'Empezamos con calma 🐾\nBuen momento para planear bien.';
-    } else if (percentUsed < 0.5) {
-      return 'Vas excelente 💙\nEl control trae tranquilidad.';
-    } else if (percentUsed < 0.8) {
-      return 'Ojo por aquí 👀\nTodavía hay margen.';
-    } else {
-      return 'Cuidado 🐱⚠️\nQuizá toca frenar un poquito.';
+  String _imageForMood() {
+    switch (mood) {
+      case KikiMood.happy:
+        return 'assets/images/kiki/kiki_happy.png';
+      case KikiMood.warning:
+        return 'assets/images/kiki/kiki_main.png';
+      case KikiMood.neutral:
+      default:
+        return 'assets/images/kiki/kiki_idle.png';
     }
-  }*/
-
-  String _message() {
-  switch (category) {
-    case 'Comida':
-      return 'Mucho en comida 🍕\n¿Probamos planear mejor?';
-    case 'Servicios':
-      return 'Servicios pesan 🧾\nTal vez revisar suscripciones.';
-    case 'Transporte':
-      return 'Movilidad activa 🚗\nBuen momento para optimizar.';
-    default:
-      return '';
   }
-}
-
-
-  /*Color _color() {
-    if (percentUsed < 0.5) return Colors.green;
-    if (percentUsed < 0.8) return Colors.orange;
-    return Colors.red;
-  }*/
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 4,
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surfaceVariant,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
@@ -53,22 +40,21 @@ class KikiMessageCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            const KikiAvatar(
-              state: KikiState.idle,
-              size: 70,
+            Image.asset(
+              _imageForMood(),
+              height: 64,
             ),
+
             const SizedBox(width: 16),
+
             Expanded(
               child: Text(
-                _message(),
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
+                message,
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
           ],
-        )
+        ),
       ),
     );
   }

@@ -2,8 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/budget_provider.dart';
-import '../../widgets/kiki_message_card.dart';
+import '../../widgets/empty_home.dart';
 
+import '../../widgets/month_selector.dart';
+import '../../widgets/expense_card.dart';
+import '../../widgets/balance_card.dart';
+import '../../widgets/insight_card.dart';
+import '../../widgets/category_card.dart';
+import '../../widgets/pro_blur_overlay.dart';
+import '../../widgets/kiki_message_card.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -11,155 +18,82 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final budget = context.watch<BudgetProvider>();
+    final hasExpenses = budget.expenses.isNotEmpty;
 
-    final spent = budget.totalSpent;
-    final total = budget.monthlyBudget;
-    final percent = total > 0 ? (spent / total).clamp(0.0, 1.0) : 0.0;
+    return hasExpenses ? const DashboardHome() : const EmptyHome();
+  }
+}
 
-    final dominantCategory = budget.getDominantCategory();
+class DashboardHome extends StatelessWidget {
+  const DashboardHome({super.key});
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// =======================
-            /// 💰 RESUMEN
-            /// =======================
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+  @override
+  Widget build(BuildContext context) {
+    final budget = context.watch<BudgetProvider>();
+
+    final double percentUsed = budget.monthlyBudget == 0
+        ? 0.0
+        : (budget.totalSpent / budget.monthlyBudget).toDouble();
+
+    KikiMood mood;
+    String message;
+
+    if (percentUsed < 0.5) {
+      mood = KikiMood.happy;
+      message = '¡Vamos genial! Tus gastos están bajo control 🐾';
+    } else if (percentUsed < 0.8) {
+      mood = KikiMood.neutral;
+      message = 'Vamos bien, pero ojo con los próximos gastos 👀';
+    } else {
+      mood = KikiMood.warning;
+      message = 'Cuidado… estamos llegando al límite del presupuesto 💳';
+    }
+
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              const MonthSelector(),
+              const SizedBox(height: 16),
+
+              KikiMessageCard(mood: mood, message: message),
+              const SizedBox(height: 12),
+
+              ExpenseCard(
+                totalExpenses: budget.totalSpent,
+                currencySymbol: budget.currencySymbol,
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Presupuesto mensual',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${budget.currencySymbol}${total.toStringAsFixed(2)}',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Gastado',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${budget.currencySymbol}${spent.toStringAsFixed(2)}',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(color: Colors.redAccent),
-                    ),
-                    const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-                    /// Barra de progreso única
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        value: percent,
-                        minHeight: 10,
-                        backgroundColor: Colors.grey.shade300,
-                        valueColor: AlwaysStoppedAnimation(
-                          percent < 0.7
-                              ? Colors.green
-                              : percent < 0.9
-                                  ? Colors.orange
-                                  : Colors.red,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              BalanceCard(
+                budget: budget.monthlyBudget,
+                spent: budget.totalSpent,
+                currencySymbol: budget.currencySymbol,
               ),
-            ),
+              const SizedBox(height: 12),
 
-            const SizedBox(height: 24),
-
-            /// =======================
-            /// 🐱 KIKI
-            /// =======================
-            KikiMessageCard(category: dominantCategory),
-
-            const SizedBox(height: 24),
-
-            /// =======================
-            /// 📊 GASTOS POR CATEGORÍA
-            /// =======================
-            Text(
-              'Gastos por categoría',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-
-            if (budget.expenses.isEmpty)
-              const Text(
-                'Aún no hay gastos registrados.',
-                style: TextStyle(color: Colors.grey),
-              )
-            else
-              Column(
-                children: budget.expenses
-                    .map((e) => e.category)
-                    .toSet()
-                    .map((category) {
-                  final totalCat = budget.totalByCategory(category);
-                  final pct = total > 0
-                      ? (totalCat / total).clamp(0.0, 1.0)
-                      : 0.0;
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(category),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(6),
-                                child: LinearProgressIndicator(
-                                  value: pct,
-                                  minHeight: 8,
-                                  backgroundColor: Colors.grey.shade300,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '${budget.currencySymbol}${totalCat.toStringAsFixed(0)}',
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
+              InsightCard(
+                dominantCategory: budget.getDominantCategory(),
+                percentUsed: percentUsed,
               ),
-          ],
+              const SizedBox(height: 16),
+
+              CategoryCard(
+                expenses: budget.expenses,
+                currencySymbol: budget.currencySymbol,
+              ),
+
+              // Espacio extra para que el overlay no tape contenido
+              const SizedBox(height: 240),
+            ],
+          ),
         ),
-      ),
+
+        /// ✅ Blur Pro
+        const ProBlurOverlay(),
+      ],
     );
   }
 }

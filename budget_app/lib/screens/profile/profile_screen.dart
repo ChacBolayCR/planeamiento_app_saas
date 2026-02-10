@@ -62,6 +62,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final symbol = context.watch<BudgetProvider>().currencySymbol;
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Perfil'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       backgroundColor: const Color(0xFFF5F6FA),
       body: SafeArea(
         child: Padding(

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class AddTransactionScreen extends StatelessWidget {
+  const AddTransactionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Nuevo gasto'),
+      ),
+      body: const Center(
         child: Text(
           'ADD OK',
           style: TextStyle(fontSize: 24),

@@ -64,6 +64,10 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/lottie/
+    - assets/images/kiki/kiki_happy.png
+    - assets/images/kiki/kiki_main.png
+    - assets/images/kiki/kiki_idle.png
+    - assets/images/kiki/kiki_play.png
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
