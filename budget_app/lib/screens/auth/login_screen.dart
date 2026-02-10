@@ -39,7 +39,7 @@ class LoginScreen extends StatelessWidget {
             const SizedBox(height: 8),
 
             const Text(
-              'La libertad empieza con educación financiera 💳',
+              'Controla tus gastos en 2 minutos.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,

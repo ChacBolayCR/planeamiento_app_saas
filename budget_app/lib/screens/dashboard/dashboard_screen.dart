@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/budget_provider.dart';
-import '../../widgets/empty_home.dart';
 
+import '../../widgets/empty_home.dart';
 import '../../widgets/month_selector.dart';
 import '../../widgets/expense_card.dart';
 import '../../widgets/balance_card.dart';
@@ -20,16 +20,38 @@ class DashboardScreen extends StatelessWidget {
     final budget = context.watch<BudgetProvider>();
     final hasExpenses = budget.expenses.isNotEmpty;
 
-    return hasExpenses ? const DashboardHome() : const EmptyHome();
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Kiki Finance'),
+      ),
+      body: hasExpenses ? const DashboardHome() : const EmptyHome(),
+    );
   }
 }
 
-class DashboardHome extends StatelessWidget {
+class DashboardHome extends StatefulWidget {
   const DashboardHome({super.key});
+
+  @override
+  State<DashboardHome> createState() => _DashboardHomeState();
+}
+
+class _DashboardHomeState extends State<DashboardHome> {
+  late DateTime selectedMonth;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    selectedMonth = DateTime(now.year, now.month);
+  }
 
   @override
   Widget build(BuildContext context) {
     final budget = context.watch<BudgetProvider>();
+
+    // ✅ Detecta cambio de mes (Kiki lo anuncia)
+    budget.checkNewMonth();
 
     final double percentUsed = budget.monthlyBudget == 0
         ? 0.0
@@ -38,7 +60,10 @@ class DashboardHome extends StatelessWidget {
     KikiMood mood;
     String message;
 
-    if (percentUsed < 0.5) {
+    if (budget.isNewMonth) {
+      mood = KikiMood.happy;
+      message = '¡Nuevo mes! 🗓️ Empezamos de cero, vamos con calma 💙';
+    } else if (percentUsed < 0.5) {
       mood = KikiMood.happy;
       message = '¡Vamos genial! Tus gastos están bajo control 🐾';
     } else if (percentUsed < 0.8) {
@@ -54,11 +79,25 @@ class DashboardHome extends StatelessWidget {
         SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const MonthSelector(),
-              const SizedBox(height: 16),
+              // ✅ Month selector real
+              MonthSelector(
+                selectedMonth: selectedMonth,
+                onChanged: (m) => setState(() => selectedMonth = m),
+              ),
+              const SizedBox(height: 12),
 
-              KikiMessageCard(mood: mood, message: message),
+              // ✅ Kiki banner compacto
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.04),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: KikiMessageCard(mood: mood, message: message),
+              ),
+
               const SizedBox(height: 12),
 
               ExpenseCard(
@@ -85,13 +124,13 @@ class DashboardHome extends StatelessWidget {
                 currencySymbol: budget.currencySymbol,
               ),
 
-              // Espacio extra para que el overlay no tape contenido
+              // espacio para que el overlay no tape el final
               const SizedBox(height: 240),
             ],
           ),
         ),
 
-        /// ✅ Blur Pro
+        // ✅ Blur Pro fijo abajo
         const ProBlurOverlay(),
       ],
     );

@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../home/home_screen.dart';
+
+import '../../navigation/main_navigation.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -29,7 +30,7 @@ class _SplashScreenState extends State<SplashScreen> {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => HomeScreen()),
+        MaterialPageRoute(builder: (_) => const MainNavigation()),
       );
     });
   }
@@ -42,25 +43,14 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
-              selectedImage,
-              width: 180,
-            ),
-
+            Image.asset(selectedImage, width: 180),
             const SizedBox(height: 24),
-
-            Text(
-              'Kiki Finance',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-
+            Text('Kiki Finance', style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),
-
             const Text(
               'La libertad empieza con educación financiera 💳',
               style: TextStyle(color: Colors.grey),
             ),
-
           ],
         ),
       ),
