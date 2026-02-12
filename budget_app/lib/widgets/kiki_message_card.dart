@@ -68,7 +68,7 @@ class KikiMessageCard extends StatelessWidget {
 
       case KikiMood.neutral:
       default:
-        return 'assets/images/kiki/kiki_main.png';
+        return 'assets/images/kiki/kiki_idle.png';
     }
   }
 }

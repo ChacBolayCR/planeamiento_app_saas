@@ -54,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
         currentIndex: _currentIndex,
         onTap: _onTap,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Resumen'),
           BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: 'Gastos'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
         ],

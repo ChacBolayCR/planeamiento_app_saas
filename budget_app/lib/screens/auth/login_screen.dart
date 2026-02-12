@@ -19,7 +19,7 @@ class LoginScreen extends StatelessWidget {
             /// 🐱 Logo Kiki
             Center(
               child: Image.asset(
-                'assets/images/kiki/kiki_main.png',
+                'assets/images/kiki/kiki_play.png',
                 height: 140,
                 fit: BoxFit.contain,
               ),
