@@ -15,7 +15,10 @@ class BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final remaining = budget - spent;
-    final percent = budget == 0 ? 0 : (spent / budget).clamp(0.0, 1.0).toDouble();;
+    final double percentUsed = budget <= 0 ? 0.0 : (spent / budget).clamp(0.0, 1.0);
+    final int remainingPct = ((1.0 - percentUsed) * 100).round();
+    final int usedPct = (percentUsed * 100).round();
+
 
     return Card(
       elevation: 2,
@@ -40,9 +43,16 @@ class BalanceCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             LinearProgressIndicator(
-              value: percent.toDouble(),
+              value: percentUsed.toDouble(),
               minHeight: 8,
               borderRadius: BorderRadius.circular(8),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Usado: $usedPct%'),
+                Text('Restante: $remainingPct%'),
+              ],
             ),
           ],
         ),

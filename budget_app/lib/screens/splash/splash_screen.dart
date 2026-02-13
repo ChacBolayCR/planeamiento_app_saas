@@ -13,12 +13,11 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  late String selectedImage;
+  late final String selectedImage;
 
   final List<String> kikiImages = [
     'assets/images/kiki/kiki_idle.png',
     'assets/images/kiki/kiki_play.png',
-    'assets/images/kiki/kiki_main.png',
     'assets/images/kiki/kiki_happy.png',
   ];
 
@@ -28,20 +27,24 @@ class _SplashScreenState extends State<SplashScreen> {
 
     selectedImage = kikiImages[Random().nextInt(kikiImages.length)];
 
-    Future(() async {
-      // ✅ Inicializa el tracking del mes (SharedPreferences)
-      await context.read<BudgetProvider>().initMonthTracking();
-
-      // ⏳ Splash duration
-      await Future.delayed(const Duration(seconds: 2));
-
-      if (!mounted) return;
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const MainNavigation()),
-      );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _boot();
     });
+  }
+
+  Future<void> _boot() async {
+    // ✅ Inicializa prefs / mes / cache de gastos
+    await context.read<BudgetProvider>().init();
+
+    // ⏳ duración del splash
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const MainNavigation()),
+    );
   }
 
   @override
@@ -52,10 +55,7 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
-              selectedImage,
-              width: 180,
-            ),
+            Image.asset(selectedImage, width: 180),
             const SizedBox(height: 24),
             Text(
               'Kiki Finance',

@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import '../../providers/budget_provider.dart';
 
-import '../../widgets/empty_home.dart';
 import '../../widgets/month_selector.dart';
 import '../../widgets/expense_card.dart';
 import '../../widgets/balance_card.dart';
@@ -33,16 +32,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final budget = context.watch<BudgetProvider>();
-
-    // ✅ Vacio = no hay gastos en el mes actual
-    final hasMonthExpenses = budget.currentMonthExpenses.isNotEmpty;
-
+    // OJO: NO usamos "hasExpenses" para decidir si el dashboard existe.
+    // El dashboard siempre existe, pero puede mostrar EmptyState por mes.
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kiki Finance'),
+        title: Text('Kiki Finance'),
       ),
-      body: hasMonthExpenses ? const DashboardHome() : const EmptyHome(),
+      body: DashboardHome(),
     );
   }
 }
@@ -53,12 +49,10 @@ class DashboardHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final budget = context.watch<BudgetProvider>();
-    
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<BudgetProvider>().checkNewMonth();
-    });
 
-    // ✅ Totales SOLO del mes actual
+    // ✅ Datos del mes seleccionado
+    final monthExpenses = budget.currentMonthExpenses;
+    final hasMonthExpenses = monthExpenses.isNotEmpty;
     final double monthSpent = budget.currentMonthTotalSpent;
 
     final double percentUsed = budget.monthlyBudget == 0
@@ -71,7 +65,11 @@ class DashboardHome extends StatelessWidget {
 
     if (budget.isNewMonth) {
       mood = KikiMood.neutral;
-      message = '¡Nuevo mes! 🗓️ Empecemos de cero: agrega tus gastos para este mes.';
+      message =
+          '¡Nuevo mes! 🗓️ Empecemos de cero: agrega tus gastos para este mes.';
+    } else if (!hasMonthExpenses) {
+      mood = KikiMood.neutral;
+      message = 'Este mes está vacío 🐾 ¿Agregamos el primer gasto?';
     } else if (percentUsed < 0.5) {
       mood = KikiMood.happy;
       message = '¡Vamos genial! Tus gastos están bajo control 🐾';
@@ -90,39 +88,38 @@ class DashboardHome extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const MonthSelector(selectedMonth: budget.selectedMonth, onChanged: budget.setSelectedMonth),
-              const SizedBox(height: 12),
-
-              // (Opcional) si quieres un “mensaje” como card arriba,
-              // puedes dejarlo, pero como ya tenemos Kiki flotante,
-              // lo dejo fuera para que no sea redundante.
-              //
-              // KikiMessageCard(mood: mood, message: message),
-              // const SizedBox(height: 12),
-
-              ExpenseCard(
-                totalExpenses: monthSpent,
-                currencySymbol: budget.currencySymbol,
+              // ✅ Selector de mes navegable (con "Hoy" + flechas)
+              MonthSelector(
+                selectedMonth: budget.selectedMonthDate,
+                onChanged: budget.setSelectedMonthDate,
               ),
               const SizedBox(height: 12),
 
-              BalanceCard(
-                budget: budget.monthlyBudget,
-                spent: monthSpent,
-                currencySymbol: budget.currencySymbol,
-              ),
-              const SizedBox(height: 12),
+              // ✅ Si el mes no tiene datos, no “rompas” el dashboard:
+              // muestra un empty-state por mes y deja volver a "Hoy".
+              if (!hasMonthExpenses) ...[
+                _EmptyMonthCard(
+                  onGoToday: () => budget.setSelectedMonthDate(DateTime.now()),
+                ),
+              ] else ...[
+                ExpenseCard(
+                  totalExpenses: monthSpent,
+                  currencySymbol: budget.currencySymbol,
+                ),
+                const SizedBox(height: 12),
 
-              InsightCard(
-                dominantCategory: budget.currentMonthDominantCategory,
-                percentUsed: percentUsed,
-              ),
-              const SizedBox(height: 16),
+                BalanceCard(
+                  budget: budget.monthlyBudget,
+                  spent: monthSpent,
+                  currencySymbol: budget.currencySymbol,
+                ),
+                const SizedBox(height: 12),
 
-              CategoryCard(
-                expenses: budget.currentMonthExpenses,
-                currencySymbol: budget.currencySymbol,
-              ),
+                CategoryCard(
+                  expenses: monthExpenses,
+                  currencySymbol: budget.currencySymbol,
+                ),
+              ],
 
               // espacio para que overlay + kiki no tapen el final
               const SizedBox(height: 220),
@@ -137,11 +134,53 @@ class DashboardHome extends StatelessWidget {
         KikiAssistant(
           mood: mood,
           message: message,
+          // Solo permitimos “dismiss” cuando es mensaje de nuevo mes
           onDismiss: budget.isNewMonth
-          ? () => context.read<BudgetProvider>().dismissNewMonthMessage()
-          : null,
+              ? () => context.read<BudgetProvider>().dismissNewMonthMessage()
+              : null,
         ),
       ],
+    );
+  }
+}
+
+class _EmptyMonthCard extends StatelessWidget {
+  final VoidCallback onGoToday;
+
+  const _EmptyMonthCard({required this.onGoToday});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            const Text(
+              'Agrega tus gastos para comenzar 🐾',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'No hay registros en este mes. Puedes volver al mes actual o crear tu primer gasto.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onGoToday,
+                icon: const Icon(Icons.today),
+                label: const Text('Volver al mes actual'),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

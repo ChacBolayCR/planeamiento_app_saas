@@ -1,28 +1,22 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-
 import 'kiki_message_card.dart';
 
 class KikiAssistant extends StatefulWidget {
   final KikiMood mood;
   final String message;
 
-  /// ✅ Callback para “marcar leído” (ej: nuevo mes)
-  final VoidCallback? onDismiss;
-
-  /// si quieres que se oculte solo
-  final Duration autoHideAfter;
-
   /// posición en pantalla
   final EdgeInsets margin;
+
+  /// ✅ opcional: si quieres permitir cerrar el mensaje (ej: nuevo mes)
+  final VoidCallback? onDismiss;
 
   const KikiAssistant({
     super.key,
     required this.mood,
     required this.message,
-    this.onDismiss,
-    this.autoHideAfter = const Duration(seconds: 4),
     this.margin = const EdgeInsets.only(right: 16, bottom: 16),
+    this.onDismiss,
   });
 
   @override
@@ -30,32 +24,6 @@ class KikiAssistant extends StatefulWidget {
 }
 
 class _KikiAssistantState extends State<KikiAssistant> {
-  bool _showBubble = false;
-  Timer? _timer;
-
-  void _toggleBubble() {
-    setState(() => _showBubble = !_showBubble);
-
-    _timer?.cancel();
-
-    if (_showBubble) {
-      _timer = Timer(widget.autoHideAfter, () {
-        if (!mounted) return;
-        setState(() => _showBubble = false);
-        widget.onDismiss?.call();
-      });
-    } else {
-      // Cierre manual
-      widget.onDismiss?.call();
-    }
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
   String _kikiAssetForMood(KikiMood mood) {
     switch (mood) {
       case KikiMood.happy:
@@ -76,48 +44,57 @@ class _KikiAssistantState extends State<KikiAssistant> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // 🗨️ bubble
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: _showBubble
-                ? Container(
-                    key: const ValueKey('bubble'),
-                    constraints: const BoxConstraints(maxWidth: 320),
-                    margin: const EdgeInsets.only(bottom: 10),
-                    child: _SpeechBubble(
-                      child: KikiMessageCard(
-                        mood: widget.mood,
-                        message: widget.message,
-                        compact: true,
+          // ✅ Globo SIEMPRE visible, pero sin avatar interno
+          Container(
+            constraints: const BoxConstraints(maxWidth: 320),
+            margin: const EdgeInsets.only(bottom: 10),
+            child: _SpeechBubble(
+              child: Stack(
+                children: [
+                  KikiMessageCard(
+                    mood: widget.mood,
+                    message: widget.message,
+                    compact: true,
+                    showAvatar: false, // ✅ clave para evitar redundancia
+                  ),
+                  if (widget.onDismiss != null)
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: InkWell(
+                        onTap: widget.onDismiss,
+                        borderRadius: BorderRadius.circular(999),
+                        child: const Padding(
+                          padding: EdgeInsets.all(6),
+                          child: Icon(Icons.close, size: 16),
+                        ),
                       ),
                     ),
-                  )
-                : const SizedBox.shrink(key: ValueKey('empty')),
-          ),
-
-          // 🐱 floating button (kiki)
-          GestureDetector(
-            onTap: _toggleBubble,
-            child: Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.12),
-                    blurRadius: 18,
-                    offset: const Offset(0, 10),
-                  ),
                 ],
               ),
-              padding: const EdgeInsets.all(6),
-              child: ClipOval(
-                child: Image.asset(
-                  _kikiAssetForMood(widget.mood),
-                  fit: BoxFit.cover,
+            ),
+          ),
+
+          // 🐱 botón flotante con la imagen de Kiki
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.12),
+                  blurRadius: 18,
+                  offset: const Offset(0, 10),
                 ),
+              ],
+            ),
+            padding: const EdgeInsets.all(6),
+            child: ClipOval(
+              child: Image.asset(
+                _kikiAssetForMood(widget.mood),
+                fit: BoxFit.cover,
               ),
             ),
           ),
