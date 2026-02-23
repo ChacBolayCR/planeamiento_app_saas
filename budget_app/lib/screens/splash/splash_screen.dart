@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -12,61 +11,131 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
-  late final String selectedImage;
-
-  final List<String> kikiImages = [
-    'assets/images/kiki/kiki_idle.png',
-    'assets/images/kiki/kiki_play.png',
-    'assets/images/kiki/kiki_happy.png',
-  ];
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
 
-    selectedImage = kikiImages[Random().nextInt(kikiImages.length)];
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2800),
+    );
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _boot();
-    });
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+
+    _startSequence();
   }
 
-  Future<void> _boot() async {
-    // ✅ Inicializa prefs / mes / cache de gastos
+  Future<void> _startSequence() async {
     await context.read<BudgetProvider>().init();
 
-    // ⏳ duración del splash
-    await Future.delayed(const Duration(seconds: 2));
+    _controller.forward();
+
+    await Future.delayed(const Duration(milliseconds: 3000));
 
     if (!mounted) return;
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const MainNavigation()),
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 500),
+        pageBuilder: (_, animation, __) => const MainNavigation(),
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+      ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(selectedImage, width: 180),
-            const SizedBox(height: 24),
-            Text(
-              'Kiki Finance',
-              style: Theme.of(context).textTheme.headlineSmall,
+      body: Container(
+        // 🎨 Fondo premium suave
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFF5F7FA),
+              Color(0xFFE8EDF5),
+            ],
+          ),
+        ),
+        child: Center(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // 🐱 Kiki con zoom suave
+                ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: Column(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 30,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
+                        ),
+                        child: Image.asset(
+                          'assets/images/kiki/kiki_ceo_tablet.png',
+                          width: 180,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                const Text(
+                  'Kiki Finance',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  'La libertad empieza con educación financiera 💳',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'La libertad empieza con educación financiera 💳',
-              style: TextStyle(color: Colors.grey),
-            ),
-          ],
+          ),
         ),
       ),
     );

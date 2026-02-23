@@ -6,7 +6,6 @@ import '../../providers/budget_provider.dart';
 import '../../widgets/month_selector.dart';
 import '../../widgets/expense_card.dart';
 import '../../widgets/balance_card.dart';
-import '../../widgets/insight_card.dart';
 import '../../widgets/category_card.dart';
 import '../../widgets/pro_blur_overlay.dart';
 import '../../widgets/kiki_assistant.dart';
@@ -35,11 +34,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // OJO: NO usamos "hasExpenses" para decidir si el dashboard existe.
     // El dashboard siempre existe, pero puede mostrar EmptyState por mes.
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Kiki Finance'),
+  appBar: AppBar(
+    title: const Text('Kiki Finance'),
+    backgroundColor: Colors.transparent,
+    elevation: 0,
+  ),
+  extendBodyBehindAppBar: false,
+  body: Container(
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Color(0xFFF8F6F2), // beige suave cálido
+          Color(0xFFFFFFFF), // blanco
+        ],
       ),
-      body: DashboardHome(),
-    );
+    ),
+    child: const DashboardHome(),
+  ),
+);
   }
 }
 
@@ -78,7 +92,7 @@ class DashboardHome extends StatelessWidget {
       message = 'Vamos bien, pero ojo con los próximos gastos 👀';
     } else {
       mood = KikiMood.warning;
-      message = 'Cuidado… estamos llegando al límite del presupuesto 💳';
+      message = 'Cuidado… estamos llegando al límite del presupuesto';
     }
 
     return Stack(
@@ -101,6 +115,13 @@ class DashboardHome extends StatelessWidget {
                 _EmptyMonthCard(
                   onGoToday: () => budget.setSelectedMonthDate(DateTime.now()),
                 ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                            // navegar a expenses screen
+                  },
+                  icon: Icon(Icons.add),
+                  label: Text('Agregar gasto'),
+                )
               ] else ...[
                 ExpenseCard(
                   totalExpenses: monthSpent,
@@ -170,14 +191,6 @@ class _EmptyMonthCard extends StatelessWidget {
               style: TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: onGoToday,
-                icon: const Icon(Icons.today),
-                label: const Text('Volver al mes actual'),
-              ),
-            ),
           ],
         ),
       ),

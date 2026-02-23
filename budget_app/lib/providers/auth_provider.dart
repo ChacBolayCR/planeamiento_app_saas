@@ -1,16 +1,31 @@
 import 'package:flutter/material.dart';
 
-class AuthProvider with ChangeNotifier {
-  bool _isNewUser = true;
+class AuthProvider extends ChangeNotifier {
+  bool _isLoggedIn = false;
+  bool get isLoggedIn => _isLoggedIn;
 
-  bool get isNewUser => _isNewUser;
+  String? _email;
+  String? get email => _email;
 
-  void markUserAsActive() {
-    _isNewUser = false;
+  Future<void> login(String email, String password) async {
+    // ✅ Simulación de login (luego lo conectamos a Firebase)
+    await Future.delayed(const Duration(milliseconds: 700));
+
+    _email = email.trim();
+    _isLoggedIn = true;
     notifyListeners();
   }
 
-  // En el futuro:
-  // - cargar desde storage
-  // - backend
+  Future<void> loginAsGuest() async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    _email = null;
+    _isLoggedIn = true;
+    notifyListeners();
+  }
+
+  void logout() {
+    _isLoggedIn = false;
+    _email = null;
+    notifyListeners();
+  }
 }

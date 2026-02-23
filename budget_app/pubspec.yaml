@@ -29,7 +29,16 @@ flutter:
 
   assets:
     - assets/lottie/
-    - assets/images/kiki/kiki_happy.png
-    - assets/images/kiki/kiki_main.png
-    - assets/images/kiki/kiki_idle.png
-    - assets/images/kiki/kiki_play.png
+    - assets/images/kiki/kiki_ceo_tablet.png
+    - assets/images/kiki/kiki_idle_main_v2.png
+    - assets/images/kiki/kiki_neutral.png
+    - assets/images/kiki/kiki_newmonth.png
+    - assets/images/kiki/kiki_overbudget.png
+    - assets/images/kiki/kiki_sleep.png
+    - assets/images/kiki/kiki_warning.png
+    - assets/images/kiki/kiki_splash_trimmed_3s.gif
+    - assets/images/kiki/kiki_success.png
+
+
+
+
