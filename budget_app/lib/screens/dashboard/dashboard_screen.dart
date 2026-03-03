@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/budget_provider.dart';
+import '../expenses/expenses_screen.dart';
 
 import '../../widgets/month_selector.dart';
-import '../../widgets/expense_card.dart';
-import '../../widgets/balance_card.dart';
+import '../../widgets/monthly_overview_card.dart';
 import '../../widgets/category_card.dart';
 import '../../widgets/pro_blur_overlay.dart';
 import '../../widgets/kiki_assistant.dart';
@@ -23,7 +23,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
 
-    // ✅ Revisa cambio de mes una sola vez al entrar al Dashboard
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<BudgetProvider>().checkNewMonth();
     });
@@ -31,29 +30,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // OJO: NO usamos "hasExpenses" para decidir si el dashboard existe.
-    // El dashboard siempre existe, pero puede mostrar EmptyState por mes.
     return Scaffold(
-  appBar: AppBar(
-    title: const Text('Kiki Finance'),
-    backgroundColor: Colors.transparent,
-    elevation: 0,
-  ),
-  extendBodyBehindAppBar: false,
-  body: Container(
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Color(0xFFF8F6F2), // beige suave cálido
-          Color(0xFFFFFFFF), // blanco
-        ],
-      ),
-    ),
-    child: const DashboardHome(),
-  ),
-);
+      appBar: AppBar(title: Text('Kiki Finance')),
+      body: DashboardHome(),
+    );
   }
 }
 
@@ -64,35 +44,46 @@ class DashboardHome extends StatelessWidget {
   Widget build(BuildContext context) {
     final budget = context.watch<BudgetProvider>();
 
-    // ✅ Datos del mes seleccionado
     final monthExpenses = budget.currentMonthExpenses;
     final hasMonthExpenses = monthExpenses.isNotEmpty;
     final double monthSpent = budget.currentMonthTotalSpent;
 
-    final double percentUsed = budget.monthlyBudget == 0
-        ? 0.0
-        : (monthSpent / budget.monthlyBudget).toDouble();
+    final double percentUsed =
+        budget.monthlyBudget == 0 ? 0.0 : (monthSpent / budget.monthlyBudget).toDouble();
 
-    // ✅ Mensaje de Kiki (incluye “nuevo mes”)
+    // ✅ Estado + mensaje + botón opcional
     KikiMood mood;
     String message;
 
+    String? actionLabel;
+    VoidCallback? onAction;
+
     if (budget.isNewMonth) {
       mood = KikiMood.neutral;
-      message =
-          '¡Nuevo mes! 🗓️ Empecemos de cero: agrega tus gastos para este mes.';
+      message = 'Empezamos un nuevo mes 🗓️ Una nueva oportunidad de ahorrar. ¿Arrancamos?';
     } else if (!hasMonthExpenses) {
       mood = KikiMood.neutral;
-      message = 'Este mes está vacío 🐾 ¿Agregamos el primer gasto?';
+      message = 'Este mes está vacío 🐾 Tip: agrega tu primer gasto con el botón “+”.';
+    } else if (percentUsed >= 1.0) {
+      mood = KikiMood.overbudget;
+      message = 'Nos pasamos del presupuesto 😅 Vamos a revisar qué pasó y lo ajustamos.';
+      actionLabel = 'Revisar gastos';
+      onAction = () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpensesScreen()));
+      };
+    } else if (percentUsed >= 0.8) {
+      mood = KikiMood.warning;
+      message = 'Ojo 👀 ya vamos alto este mes. ¿Revisamos los gastos antes de pasarnos?';
+      actionLabel = 'Revisar gastos';
+      onAction = () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpensesScreen()));
+      };
     } else if (percentUsed < 0.5) {
       mood = KikiMood.happy;
       message = '¡Vamos genial! Tus gastos están bajo control 🐾';
-    } else if (percentUsed < 0.8) {
-      mood = KikiMood.neutral;
-      message = 'Vamos bien, pero ojo con los próximos gastos 👀';
     } else {
-      mood = KikiMood.warning;
-      message = 'Cuidado… estamos llegando al límite del presupuesto';
+      mood = KikiMood.neutral;
+      message = 'Vamos bien. Si mantenemos este ritmo, cerramos el mes tranquilos.';
     }
 
     return Stack(
@@ -102,60 +93,59 @@ class DashboardHome extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ✅ Selector de mes navegable (con "Hoy" + flechas)
               MonthSelector(
                 selectedMonth: budget.selectedMonthDate,
                 onChanged: budget.setSelectedMonthDate,
               ),
               const SizedBox(height: 12),
 
-              // ✅ Si el mes no tiene datos, no “rompas” el dashboard:
-              // muestra un empty-state por mes y deja volver a "Hoy".
               if (!hasMonthExpenses) ...[
                 _EmptyMonthCard(
                   onGoToday: () => budget.setSelectedMonthDate(DateTime.now()),
                 ),
-                ElevatedButton.icon(
-                  onPressed: () {
-                            // navegar a expenses screen
-                  },
-                  icon: Icon(Icons.add),
-                  label: Text('Agregar gasto'),
-                )
               ] else ...[
-                ExpenseCard(
-                  totalExpenses: monthSpent,
-                  currencySymbol: budget.currencySymbol,
-                ),
-                const SizedBox(height: 12),
-
-                BalanceCard(
+                // ✅ NUEVA card unificada (reemplaza ExpenseCard + BalanceCard)
+                MonthlyOverviewCard(
                   budget: budget.monthlyBudget,
                   spent: monthSpent,
                   currencySymbol: budget.currencySymbol,
                 ),
                 const SizedBox(height: 12),
 
-                CategoryCard(
-                  expenses: monthExpenses,
-                  currencySymbol: budget.currencySymbol,
+                // ✅ Categorías con “gate” Pro bien hecho:
+                // El blur va ENCIMA de esta sección, dentro del scroll.
+                Stack(
+                  children: [
+                    CategoryCard(
+                      expenses: monthExpenses,
+                      currencySymbol: budget.currencySymbol,
+                    ),
+
+                    // 🔒 Overlay encima: no se “escapa” con scroll.
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        ignoring: true,
+                        child: ProBlurOverlay(),
+                      ),
+                    ),
+                  ],
                 ),
               ],
 
-              // espacio para que overlay + kiki no tapen el final
-              const SizedBox(height: 220),
+              const SizedBox(height: 260),
             ],
           ),
         ),
 
-        // 🔒 Blur Pro (abajo)
-        const ProBlurOverlay(),
+        // ❌ IMPORTANTE: ya NO ponemos ProBlurOverlay aquí
+        // const ProBlurOverlay(),
 
-        // 🐱 Kiki flotante (asistente)
         KikiAssistant(
           mood: mood,
           message: message,
-          // Solo permitimos “dismiss” cuando es mensaje de nuevo mes
+          showOnStart: true,
+          actionLabel: actionLabel,
+          onAction: onAction,
           onDismiss: budget.isNewMonth
               ? () => context.read<BudgetProvider>().dismissNewMonthMessage()
               : null,
@@ -191,6 +181,14 @@ class _EmptyMonthCard extends StatelessWidget {
               style: TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onGoToday,
+                icon: const Icon(Icons.today),
+                label: const Text('Volver al mes actual'),
+              ),
+            ),
           ],
         ),
       ),

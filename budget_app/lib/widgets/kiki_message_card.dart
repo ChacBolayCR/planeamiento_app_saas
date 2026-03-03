@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 
-enum KikiMood { happy, neutral, warning }
+enum KikiMood { happy, neutral, warning, overbudget }
 
 class KikiMessageCard extends StatelessWidget {
   final KikiMood mood;
   final String message;
-
-  /// Si luego quieres compactarlo más, deja esto listo
   final bool compact;
 
-  /// ✅ NUEVO: permitir ocultar la imagen dentro del globo
+  // ✅ nuevo
   final bool showAvatar;
 
   const KikiMessageCard({
@@ -17,13 +15,14 @@ class KikiMessageCard extends StatelessWidget {
     required this.mood,
     required this.message,
     this.compact = false,
-    this.showAvatar = true,
+    this.showAvatar = true, // ✅ default
   });
 
   @override
   Widget build(BuildContext context) {
-    final EdgeInsets padding =
-        compact ? const EdgeInsets.all(12) : const EdgeInsets.all(16);
+    final EdgeInsets padding = compact
+        ? const EdgeInsets.all(12)
+        : const EdgeInsets.all(16);
 
     return Card(
       elevation: 0,
@@ -63,11 +62,14 @@ class KikiMessageCard extends StatelessWidget {
   String _kikiAssetForMood(KikiMood mood) {
     switch (mood) {
       case KikiMood.happy:
-        return 'assets/images/kiki/kiki_neutral.png';
+        return 'assets/images/kiki/kiki_happy.png';
       case KikiMood.warning:
         return 'assets/images/kiki/kiki_warning.png';
+      case KikiMood.overbudget:
+        return 'assets/images/kiki/kiki_overbudget.png';
       case KikiMood.neutral:
-      return 'assets/images/kiki/kiki_idle_main_v2.png';
+      default:
+        return 'assets/images/kiki/kiki_neutral.png';
     }
   }
 }
