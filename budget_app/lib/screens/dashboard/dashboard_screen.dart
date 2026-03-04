@@ -7,9 +7,11 @@ import '../expenses/expenses_screen.dart';
 import '../../widgets/month_selector.dart';
 import '../../widgets/monthly_overview_card.dart';
 import '../../widgets/category_card.dart';
-import '../../widgets/pro_blur_overlay.dart';
 import '../../widgets/kiki_assistant.dart';
 import '../../widgets/kiki_message_card.dart';
+import '../../widgets/locked_pro_card.dart';
+
+import '../expenses/add_expenses_modal.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -30,54 +32,94 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Kiki Finance')),
+    return const Scaffold(
+      appBar: _DashAppBar(),
       body: DashboardHome(),
     );
   }
 }
 
+class _DashAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const _DashAppBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      title: const Text('Kiki Finance'),
+      automaticallyImplyLeading: false,
+    );
+  }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+
 class DashboardHome extends StatelessWidget {
   const DashboardHome({super.key});
+
+  bool _isSameMonth(DateTime a, DateTime b) => a.year == b.year && a.month == b.month;
 
   @override
   Widget build(BuildContext context) {
     final budget = context.watch<BudgetProvider>();
 
+    final selected = budget.selectedMonthDate;
+    final now = DateTime.now();
+    final isCurrentMonth = _isSameMonth(selected, now);
+
     final monthExpenses = budget.currentMonthExpenses;
     final hasMonthExpenses = monthExpenses.isNotEmpty;
-    final double monthSpent = budget.currentMonthTotalSpent;
+    final monthSpent = budget.currentMonthTotalSpent;
 
-    final double percentUsed =
-        budget.monthlyBudget == 0 ? 0.0 : (monthSpent / budget.monthlyBudget).toDouble();
+    final percentUsed = budget.monthlyBudget == 0
+        ? 0.0
+        : (monthSpent / budget.monthlyBudget).clamp(0.0, 10.0);
 
-    // ✅ Estado + mensaje + botón opcional
+    // ✅ Mensajes Kiki + CTA contextual
     KikiMood mood;
     String message;
-
     String? actionLabel;
     VoidCallback? onAction;
 
+    void openAddExpense() {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (_) => const AddExpenseModal(),
+      );
+    }
+
     if (budget.isNewMonth) {
       mood = KikiMood.neutral;
-      message = 'Empezamos un nuevo mes 🗓️ Una nueva oportunidad de ahorrar. ¿Arrancamos?';
+      message = 'Nuevo mes 🗓️ ¿Definimos presupuesto y arrancamos?';
     } else if (!hasMonthExpenses) {
       mood = KikiMood.neutral;
-      message = 'Este mes está vacío 🐾 Tip: agrega tu primer gasto con el botón “+”.';
+
+      if (isCurrentMonth) {
+        message = 'Este mes está vacío 🐾 ¿Agregamos tu primer gasto?';
+        actionLabel = 'Agregar gasto';
+        onAction = openAddExpense;
+      } else {
+        message = 'Este mes no tiene gastos registrados. Puedes volver al mes actual o agregar uno aquí.';
+        actionLabel = 'Ir al mes actual';
+        onAction = () => budget.setSelectedMonthDate(now);
+      }
     } else if (percentUsed >= 1.0) {
       mood = KikiMood.overbudget;
-      message = 'Nos pasamos del presupuesto 😅 Vamos a revisar qué pasó y lo ajustamos.';
+      message = 'Nos pasamos del presupuesto 😅 ¿Revisamos los gastos?';
       actionLabel = 'Revisar gastos';
-      onAction = () {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpensesScreen()));
-      };
+      onAction = () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ExpensesScreen()),
+      );
     } else if (percentUsed >= 0.8) {
       mood = KikiMood.warning;
-      message = 'Ojo 👀 ya vamos alto este mes. ¿Revisamos los gastos antes de pasarnos?';
+      message = 'Ojo 👀 ya vamos alto este mes. ¿Revisamos antes de pasarnos?';
       actionLabel = 'Revisar gastos';
-      onAction = () {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpensesScreen()));
-      };
+      onAction = () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ExpensesScreen()),
+      );
     } else if (percentUsed < 0.5) {
       mood = KikiMood.happy;
       message = '¡Vamos genial! Tus gastos están bajo control 🐾';
@@ -94,17 +136,18 @@ class DashboardHome extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               MonthSelector(
-                selectedMonth: budget.selectedMonthDate,
+                selectedMonth: selected,
                 onChanged: budget.setSelectedMonthDate,
               ),
               const SizedBox(height: 12),
 
               if (!hasMonthExpenses) ...[
                 _EmptyMonthCard(
-                  onGoToday: () => budget.setSelectedMonthDate(DateTime.now()),
+                  isCurrentMonth: isCurrentMonth,
+                  onGoToday: () => budget.setSelectedMonthDate(now),
+                  onAddExpense: openAddExpense,
                 ),
               ] else ...[
-                // ✅ NUEVA card unificada (reemplaza ExpenseCard + BalanceCard)
                 MonthlyOverviewCard(
                   budget: budget.monthlyBudget,
                   spent: monthSpent,
@@ -112,24 +155,17 @@ class DashboardHome extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
 
-                // ✅ Categorías con “gate” Pro bien hecho:
-                // El blur va ENCIMA de esta sección, dentro del scroll.
-                Stack(
-                  children: [
-                    CategoryCard(
-                      expenses: monthExpenses,
-                      currencySymbol: budget.currencySymbol,
-                    ),
-
-                    // 🔒 Overlay encima: no se “escapa” con scroll.
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        ignoring: true,
-                        child: ProBlurOverlay(),
-                      ),
-                    ),
-                  ],
-                ),
+                // 🔒 Gate Pro real: Free no renderiza nada Pro
+                if (budget.isPro)
+                  CategoryCard(
+                    expenses: monthExpenses,
+                    currencySymbol: budget.currencySymbol,
+                  )
+                else
+                  const LockedProCard(
+                    title: 'Gastos por categoría',
+                    subtitle: 'Desbloquea categorías, reportes y análisis mensual.',
+                  ),
               ],
 
               const SizedBox(height: 260),
@@ -137,18 +173,13 @@ class DashboardHome extends StatelessWidget {
           ),
         ),
 
-        // ❌ IMPORTANTE: ya NO ponemos ProBlurOverlay aquí
-        // const ProBlurOverlay(),
-
         KikiAssistant(
           mood: mood,
           message: message,
           showOnStart: true,
           actionLabel: actionLabel,
           onAction: onAction,
-          onDismiss: budget.isNewMonth
-              ? () => context.read<BudgetProvider>().dismissNewMonthMessage()
-              : null,
+          onDismiss: budget.isNewMonth ? budget.dismissNewMonthMessage : null,
         ),
       ],
     );
@@ -156,12 +187,26 @@ class DashboardHome extends StatelessWidget {
 }
 
 class _EmptyMonthCard extends StatelessWidget {
+  final bool isCurrentMonth;
   final VoidCallback onGoToday;
+  final VoidCallback onAddExpense;
 
-  const _EmptyMonthCard({required this.onGoToday});
+  const _EmptyMonthCard({
+    required this.isCurrentMonth,
+    required this.onGoToday,
+    required this.onAddExpense,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final title = isCurrentMonth
+        ? 'Empecemos este mes 🐾'
+        : 'Mes sin movimientos';
+
+    final desc = isCurrentMonth
+        ? 'Aún no hay gastos. Agrega el primero y empezamos a registrar.'
+        : 'No hay gastos en este mes. Puedes volver al mes actual o agregar uno aquí.';
+
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -169,26 +214,39 @@ class _EmptyMonthCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const Text(
-              'Agrega tus gastos para comenzar 🐾',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            const Text(
-              'No hay registros en este mes. Puedes volver al mes actual o crear tu primer gasto.',
+            Text(
+              desc,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: const TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 12),
+
             SizedBox(
               width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: onGoToday,
-                icon: const Icon(Icons.today),
-                label: const Text('Volver al mes actual'),
+              child: ElevatedButton.icon(
+                onPressed: onAddExpense,
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Agregar gasto'),
               ),
             ),
+
+            if (!isCurrentMonth) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: onGoToday,
+                  icon: const Icon(Icons.today),
+                  label: const Text('Ir al mes actual'),
+                ),
+              ),
+            ],
           ],
         ),
       ),

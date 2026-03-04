@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -25,13 +26,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
 
-    final provider = context.read<BudgetProvider>();
+    // ✅ Evita leer provider “muy temprano” (causaba pantalla negra en algunos casos)
+    _budgetController = TextEditingController(text: '0');
 
-    _budgetController = TextEditingController(
-      text: provider.monthlyBudget.toStringAsFixed(0),
-    );
-
-    _selectedCurrency = provider.currencyCode;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final provider = context.read<BudgetProvider>();
+      _budgetController.text = provider.monthlyBudget.toStringAsFixed(0);
+      setState(() => _selectedCurrency = provider.currencyCode);
+    });
   }
 
   @override
@@ -44,14 +47,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final provider = context.read<BudgetProvider>();
 
     final budget = double.tryParse(_budgetController.text);
-    if (budget == null || budget <= 0) return;
+    if (budget == null || budget <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ingresa un presupuesto válido'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
     provider.setMonthlyBudget(budget);
     provider.setCurrency(_selectedCurrency);
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Perfil actualizado'),
+        content: Text('Perfil actualizado ✅'),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -64,12 +75,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Perfil'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: false,
       ),
-      backgroundColor: const Color(0xFFF5F6FA),
+      //backgroundColor: const Color(0xFFF5F6FA),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -128,6 +136,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   }
                 },
               ),
+
+              /// ✅ DEBUG: Toggle Pro (solo en Debug)
+              if (kDebugMode) ...[
+                const SizedBox(height: 20),
+                Text(
+                  'Debug',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black.withOpacity(0.70),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Consumer<BudgetProvider>(
+                  builder: (_, provider, __) {
+                    return Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            const Expanded(
+                              child: Text(
+                                'Pro (modo pruebas)',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                            Switch(
+                              value: provider.isPro,
+                              onChanged: provider.setIsPro,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
 
               const Spacer(),
 

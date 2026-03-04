@@ -6,21 +6,13 @@ import 'kiki_message_card.dart';
 class KikiAssistant extends StatefulWidget {
   final KikiMood mood;
   final String message;
-
-  /// si quieres que se oculte solo
   final Duration autoHideAfter;
-
-  /// posición en pantalla
   final EdgeInsets margin;
-
-  /// mostrar bubble al entrar (y luego auto-hide)
   final bool showOnStart;
 
-  /// botón de acción opcional dentro del bubble
   final String? actionLabel;
   final VoidCallback? onAction;
 
-  /// botón para dismiss (nuevo mes)
   final VoidCallback? onDismiss;
 
   const KikiAssistant({
@@ -43,12 +35,16 @@ class _KikiAssistantState extends State<KikiAssistant> {
   bool _showBubble = false;
   Timer? _timer;
 
+  void _cancelTimer() {
+    _timer?.cancel();
+    _timer = null;
+  }
+
   @override
   void initState() {
     super.initState();
 
     if (widget.showOnStart) {
-      // lo mostramos al cargar (post-frame)
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         _openBubble();
@@ -56,38 +52,63 @@ class _KikiAssistantState extends State<KikiAssistant> {
     }
   }
 
-  void _openBubble() {
-    setState(() => _showBubble = true);
+  @override
+  void didUpdateWidget(covariant KikiAssistant oldWidget) {
+    super.didUpdateWidget(oldWidget);
 
-    _timer?.cancel();
+    // Si cambia el mensaje/mood, reiniciamos el timer para evitar estados raros.
+    if (oldWidget.message != widget.message || oldWidget.mood != widget.mood) {
+      _cancelTimer();
+      if (_showBubble) {
+        _startAutoHide();
+      }
+    }
+  }
+
+  void _startAutoHide() {
+    _cancelTimer();
     _timer = Timer(widget.autoHideAfter, () {
       if (!mounted) return;
+      if (!_showBubble) return;
       setState(() => _showBubble = false);
     });
   }
 
+  void _openBubble() {
+    if (!mounted) return;
+    setState(() => _showBubble = true);
+    _startAutoHide();
+  }
+
   void _toggleBubble() {
+    if (!mounted) return;
+
     setState(() => _showBubble = !_showBubble);
 
-    _timer?.cancel();
     if (_showBubble) {
-      _timer = Timer(widget.autoHideAfter, () {
-        if (!mounted) return;
-        setState(() => _showBubble = false);
-      });
+      _startAutoHide();
+    } else {
+      _cancelTimer();
     }
   }
 
   @override
+  void deactivate() {
+    // ✅ Esto mata timers incluso si la pantalla se está quitando del árbol por navegación.
+    _cancelTimer();
+    super.deactivate();
+  }
+
+  @override
   void dispose() {
-    _timer?.cancel();
+    _cancelTimer();
     super.dispose();
   }
 
   String _kikiAssetForMood(KikiMood mood) {
     switch (mood) {
       case KikiMood.happy:
-        return 'assets/images/kiki/kiki_happy.png';
+        return 'assets/images/kiki/kiki_success.png';
       case KikiMood.warning:
         return 'assets/images/kiki/kiki_warning.png';
       case KikiMood.overbudget:
@@ -106,7 +127,6 @@ class _KikiAssistantState extends State<KikiAssistant> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // 🗨️ bubble
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 200),
             child: _showBubble
@@ -123,10 +143,10 @@ class _KikiAssistantState extends State<KikiAssistant> {
                             mood: widget.mood,
                             message: widget.message,
                             compact: true,
-                            showAvatar: false, // ✅
+                            showAvatar: false,
                           ),
-
-                          if (widget.actionLabel != null && widget.onAction != null) ...[
+                          if (widget.actionLabel != null &&
+                              widget.onAction != null) ...[
                             const SizedBox(height: 8),
                             SizedBox(
                               width: double.infinity,
@@ -136,7 +156,6 @@ class _KikiAssistantState extends State<KikiAssistant> {
                               ),
                             ),
                           ],
-
                           if (widget.onDismiss != null) ...[
                             const SizedBox(height: 6),
                             TextButton(
@@ -150,8 +169,6 @@ class _KikiAssistantState extends State<KikiAssistant> {
                   )
                 : const SizedBox.shrink(key: ValueKey('empty')),
           ),
-
-          // 🐱 floating button (kiki)
           GestureDetector(
             onTap: _toggleBubble,
             child: Container(
@@ -185,7 +202,6 @@ class _KikiAssistantState extends State<KikiAssistant> {
 
 class _SpeechBubble extends StatelessWidget {
   final Widget child;
-
   const _SpeechBubble({required this.child});
 
   @override

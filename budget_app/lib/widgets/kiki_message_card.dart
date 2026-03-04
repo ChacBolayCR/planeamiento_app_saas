@@ -62,7 +62,7 @@ class KikiMessageCard extends StatelessWidget {
   String _kikiAssetForMood(KikiMood mood) {
     switch (mood) {
       case KikiMood.happy:
-        return 'assets/images/kiki/kiki_happy.png';
+        return 'assets/images/kiki/kiki_success.png';
       case KikiMood.warning:
         return 'assets/images/kiki/kiki_warning.png';
       case KikiMood.overbudget:

@@ -26,10 +26,10 @@ class ProBlurOverlay extends StatelessWidget {
             child: Stack(
               children: [
                 // Blur real
-                BackdropFilter(
+                /*BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: const SizedBox.expand(),
-                ),
+                ),*/
 
                 // Degradado para que se vea premium y no “parche”
                 Container(

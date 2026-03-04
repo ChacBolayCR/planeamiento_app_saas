@@ -13,6 +13,7 @@ class BudgetProvider extends ChangeNotifier {
   static const _kSelectedMonth = 'selectedMonthKey';
   static const _kLastSeenMonth = 'lastSeenMonthKey';
   static const _kDismissedMonth = 'dismissedNewMonthKey'; // para no repetir el mensaje
+  static const _kIsPro = 'isPro'; // flag local para pruebas
   static String _kExpensesFor(String mk) => 'expenses_$mk';
 
   SharedPreferences? _prefs;
@@ -34,6 +35,10 @@ class BudgetProvider extends ChangeNotifier {
   bool _isNewMonth = false;
   bool get isNewMonth => _isNewMonth;
 
+  /// ⭐ Pro (feature-flag local para pruebas)
+  bool _isPro = false;
+  bool get isPro => _isPro;
+
   /// 📦 Cache en memoria de gastos por mes
   /// (para no estar leyendo prefs cada build)
   final Map<String, List<Expense>> _expensesByMonth = {};
@@ -52,6 +57,9 @@ class BudgetProvider extends ChangeNotifier {
     _monthlyBudget = _prefs!.getDouble(_kBudget) ?? 0;
     _currencyCode = _prefs!.getString(_kCurrency) ?? 'CRC';
 
+    // pro flag
+    _isPro = _prefs!.getBool(_kIsPro) ?? false;
+
     // cargar gastos del mes seleccionado (y opcionalmente del actual)
     await _loadMonthIfNeeded(_selectedMonthKey);
     if (_selectedMonthKey != nowKey) {
@@ -61,6 +69,13 @@ class BudgetProvider extends ChangeNotifier {
     // marcar nuevo mes si aplica
     _checkNewMonthInternal();
 
+    notifyListeners();
+  }
+
+  /// Para activar/desactivar Pro durante pruebas (no UI todavía)
+  void setIsPro(bool value) {
+    _isPro = value;
+    _prefs?.setBool(_kIsPro, value);
     notifyListeners();
   }
 
@@ -81,11 +96,10 @@ class BudgetProvider extends ChangeNotifier {
     return DateTime(y, m, 1);
   }
 
-void setSelectedMonthDate(DateTime date) {
-  final mk = monthKey(date);
-  setSelectedMonth(mk);
-}
-
+  void setSelectedMonthDate(DateTime date) {
+    final mk = monthKey(date);
+    setSelectedMonth(mk);
+  }
 
   // =======================
   // CONFIG

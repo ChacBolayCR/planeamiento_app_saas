@@ -6,12 +6,18 @@ import 'providers/budget_provider.dart';
 
 import 'app.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // ✅ Creamos providers, inicializamos lo que toca, y luego corremos la app
+  final budgetProvider = BudgetProvider();
+  await budgetProvider.init();
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => BudgetProvider()),
+        ChangeNotifierProvider<BudgetProvider>.value(value: budgetProvider),
       ],
       child: const MyApp(),
     ),
