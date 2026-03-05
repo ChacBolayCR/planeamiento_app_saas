@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -8,27 +9,72 @@ import 'add_expenses_modal.dart';
 class ExpensesScreen extends StatelessWidget {
   const ExpensesScreen({super.key});
 
+  Future<void> _showFreeLimitDialog(BuildContext context, int limit) async {
+    final budget = context.read<BudgetProvider>();
+
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Límite Free alcanzado'),
+        content: Text('En la versión gratuita puedes registrar hasta $limit gastos por mes.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Entendido'),
+          ),
+          if (kDebugMode)
+            ElevatedButton(
+              onPressed: () {
+                budget.setIsPro(true);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Pro activado (modo pruebas) ✅'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              child: const Text('Activar Pro (debug)'),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _openAdd(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => const AddExpenseModal(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final budget = context.watch<BudgetProvider>();
     final expenses = budget.expenses;
 
+    final limit = BudgetProvider.freeMonthlyExpenseLimit;
+    final canAdd = budget.isPro || expenses.length < limit;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Gastos')),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            builder: (_) => const AddExpenseModal(),
-          );
+        onPressed: () async {
+          if (canAdd) {
+            _openAdd(context);
+          } else {
+            await _showFreeLimitDialog(context, limit);
+          }
         },
         child: const Icon(Icons.add),
       ),
       body: expenses.isEmpty
           ? const Center(child: Text('No hay gastos registrados'))
-          : ListView.builder(
+          : ListView.separated(
+              padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: expenses.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 6),
               itemBuilder: (context, index) {
                 return _ExpenseTile(expense: expenses[index]);
               },
@@ -103,10 +149,7 @@ class _ExpenseTile extends StatelessWidget {
     );
   }
 
-  void _confirmDelete(
-    BuildContext context,
-    BudgetProvider provider,
-  ) {
+  void _confirmDelete(BuildContext context, BudgetProvider provider) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -118,12 +161,16 @@ class _ExpenseTile extends StatelessWidget {
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
               provider.removeExpense(expense.id);
               Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Gasto eliminado'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
             },
             child: const Text('Eliminar'),
           ),

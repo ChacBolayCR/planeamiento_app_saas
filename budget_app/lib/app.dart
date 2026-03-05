@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'screens/auth/login_screen.dart';
+import 'screens/auth/auth_gate.dart';
 import 'theme/kiki_theme.dart';
 
 class MyApp extends StatelessWidget {
@@ -11,10 +11,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Budget App',
-      // Base44 style
       themeMode: ThemeMode.light,
       theme: KikiTheme.light(),
-      home: const LoginScreen(),
+      home: const AuthGate(),
     );
   }
 }

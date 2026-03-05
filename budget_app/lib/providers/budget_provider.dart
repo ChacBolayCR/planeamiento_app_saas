@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,6 +7,14 @@ import '../models/expense.dart';
 
 String monthKey(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}';
 
+
+class FreeLimitReachedException implements Exception {
+  final int limit;
+  FreeLimitReachedException(this.limit);
+
+  @override
+  String toString() => 'FreeLimitReachedException(limit: $limit)';
+}
 class BudgetProvider extends ChangeNotifier {
   // ====== prefs keys
   static const _kBudget = 'monthlyBudget';
@@ -15,6 +24,8 @@ class BudgetProvider extends ChangeNotifier {
   static const _kDismissedMonth = 'dismissedNewMonthKey'; // para no repetir el mensaje
   static const _kIsPro = 'isPro'; // flag local para pruebas
   static String _kExpensesFor(String mk) => 'expenses_$mk';
+  static const int freeMonthlyExpenseLimit = 20;
+
 
   SharedPreferences? _prefs;
 
@@ -139,11 +150,17 @@ class BudgetProvider extends ChangeNotifier {
   double get totalSpent => currentMonthTotalSpent;
 
   void addExpense(Expense expense) {
-    final list = _expensesByMonth.putIfAbsent(_selectedMonthKey, () => []);
-    list.add(expense);
-    _saveMonth(_selectedMonthKey);
-    notifyListeners();
+  final list = _expensesByMonth.putIfAbsent(_selectedMonthKey, () => []);
+
+  // ✅ Límite Free
+  if (!_isPro && list.length >= freeMonthlyExpenseLimit) {
+    throw FreeLimitReachedException(freeMonthlyExpenseLimit);
   }
+
+  list.add(expense);
+  _saveMonth(_selectedMonthKey);
+  notifyListeners();
+}
 
   void removeExpense(String id) {
     final list = _expensesByMonth[_selectedMonthKey];
@@ -236,5 +253,16 @@ class BudgetProvider extends ChangeNotifier {
     final list = _expensesByMonth[mk] ?? [];
     final payload = jsonEncode(list.map((e) => e.toMap()).toList());
     _prefs!.setString(_kExpensesFor(mk), payload);
+  }
+
+    /// ✅ Exponer key builder (útil para charts)
+  String monthKeyFor(DateTime d) => monthKey(d);
+
+  /// ✅ Total gastado para un mes específico (carga prefs si hace falta)
+  Future<double> totalSpentForMonth(DateTime month) async {
+    final mk = monthKey(DateTime(month.year, month.month, 1));
+    await _loadMonthIfNeeded(mk);
+    final list = _expensesByMonth[mk] ?? const <Expense>[];
+    return list.fold<double>(0.0, (sum, e) => sum + e.amount);
   }
 }

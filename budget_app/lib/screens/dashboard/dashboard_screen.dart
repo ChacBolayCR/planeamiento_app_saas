@@ -1,12 +1,18 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/budget_provider.dart';
 import '../expenses/expenses_screen.dart';
 
+import '../debug/debug_panel_screen.dart';
+import '../../widgets/secret_tap_detector.dart';
+
 import '../../widgets/month_selector.dart';
 import '../../widgets/monthly_overview_card.dart';
-import '../../widgets/category_card.dart';
+import '../../widgets/dominant_category_card.dart';
+import '../../widgets/category_bar_chart_card.dart';
+import '../../widgets/monthly_trend_chart_card.dart';
 import '../../widgets/kiki_assistant.dart';
 import '../../widgets/kiki_message_card.dart';
 import '../../widgets/locked_pro_card.dart';
@@ -26,6 +32,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       context.read<BudgetProvider>().checkNewMonth();
     });
   }
@@ -45,7 +52,17 @@ class _DashAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: const Text('Kiki Finance'),
+      title: SecretTapDetector(
+        onUnlocked: () {
+          if (!kDebugMode) return;
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const DebugPanelScreen()),
+          );
+        },
+        child: const Text('Kiki Finance'),
+      ),
       automaticallyImplyLeading: false,
     );
   }
@@ -75,6 +92,14 @@ class DashboardHome extends StatelessWidget {
         ? 0.0
         : (monthSpent / budget.monthlyBudget).clamp(0.0, 10.0);
 
+    // ✅ Dominante
+    final dominant = budget.currentMonthDominantCategory;
+    final dominantAmount = dominant.isEmpty ? 0.0 : budget.totalByCategory(dominant);
+
+    // ✅ Límite Free
+    final freeLimit = BudgetProvider.freeMonthlyExpenseLimit;
+    final reachedFreeLimit = !budget.isPro && monthExpenses.length >= freeLimit;
+
     // ✅ Mensajes Kiki + CTA contextual
     KikiMood mood;
     String message;
@@ -89,9 +114,48 @@ class DashboardHome extends StatelessWidget {
       );
     }
 
+    void openExpenses() {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ExpensesScreen()),
+      );
+    }
+
     if (budget.isNewMonth) {
       mood = KikiMood.neutral;
       message = 'Nuevo mes 🗓️ ¿Definimos presupuesto y arrancamos?';
+      actionLabel = 'Agregar gasto';
+      onAction = openAddExpense;
+    } else if (reachedFreeLimit) {
+      mood = KikiMood.warning;
+      message = 'Llegamos al límite Free ($freeLimit gastos/mes). Para seguir registrando, necesitas Pro ✨';
+      actionLabel = 'Activar Pro';
+      onAction = () {
+        if (kDebugMode) {
+          budget.setIsPro(true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Pro activado (modo pruebas) ✅'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
+
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Pro ✨'),
+            content: const Text('Pro desbloquea gastos ilimitados, gráficas y tendencias. (Próximamente)'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Ok'),
+              ),
+            ],
+          ),
+        );
+      };
     } else if (!hasMonthExpenses) {
       mood = KikiMood.neutral;
 
@@ -108,24 +172,22 @@ class DashboardHome extends StatelessWidget {
       mood = KikiMood.overbudget;
       message = 'Nos pasamos del presupuesto 😅 ¿Revisamos los gastos?';
       actionLabel = 'Revisar gastos';
-      onAction = () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const ExpensesScreen()),
-      );
+      onAction = openExpenses;
     } else if (percentUsed >= 0.8) {
       mood = KikiMood.warning;
       message = 'Ojo 👀 ya vamos alto este mes. ¿Revisamos antes de pasarnos?';
       actionLabel = 'Revisar gastos';
-      onAction = () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const ExpensesScreen()),
-      );
+      onAction = openExpenses;
     } else if (percentUsed < 0.5) {
       mood = KikiMood.happy;
       message = '¡Vamos genial! Tus gastos están bajo control 🐾';
+      actionLabel = 'Agregar gasto';
+      onAction = openAddExpense;
     } else {
       mood = KikiMood.neutral;
       message = 'Vamos bien. Si mantenemos este ritmo, cerramos el mes tranquilos.';
+      actionLabel = 'Ver gastos';
+      onAction = openExpenses;
     }
 
     return Stack(
@@ -155,13 +217,22 @@ class DashboardHome extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
 
-                // 🔒 Gate Pro real: Free no renderiza nada Pro
-                if (budget.isPro)
-                  CategoryCard(
+                DominantCategoryCard(
+                  category: dominant,
+                  amount: dominantAmount,
+                  currencySymbol: budget.currencySymbol,
+                ),
+                const SizedBox(height: 12),
+
+                // 🔒 Gate Pro real: Free NO renderiza contenido Pro
+                if (budget.isPro) ...[
+                  CategoryBarChartCard(
                     expenses: monthExpenses,
                     currencySymbol: budget.currencySymbol,
-                  )
-                else
+                  ),
+                  const SizedBox(height: 12),
+                  const MonthlyTrendChartCard(months: 6),
+                ] else
                   const LockedProCard(
                     title: 'Gastos por categoría',
                     subtitle: 'Desbloquea categorías, reportes y análisis mensual.',
@@ -199,9 +270,7 @@ class _EmptyMonthCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = isCurrentMonth
-        ? 'Empecemos este mes 🐾'
-        : 'Mes sin movimientos';
+    final title = isCurrentMonth ? 'Empecemos este mes 🐾' : 'Mes sin movimientos';
 
     final desc = isCurrentMonth
         ? 'Aún no hay gastos. Agrega el primero y empezamos a registrar.'
