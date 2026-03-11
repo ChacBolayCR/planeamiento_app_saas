@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
-import '../splash/splash_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,44 +13,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _email = TextEditingController();
   final _pass = TextEditingController();
-  bool _loading = false;
 
-  Future<void> _goToSplash() async {
-    if (!mounted) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const SplashScreen()),
-    );
-  }
-
-  Future<void> _login() async {
-    final email = _email.text.trim();
-    final pass = _pass.text;
-
-    if (email.isEmpty || !email.contains('@') || pass.length < 4) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Revisa tu correo y contraseña'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
-    setState(() => _loading = true);
-    await context.read<AuthProvider>().login(email, pass);
-    setState(() => _loading = false);
-
-    await _goToSplash();
-  }
-
-  Future<void> _guest() async {
-    setState(() => _loading = true);
-    await context.read<AuthProvider>().loginAsGuest();
-    setState(() => _loading = false);
-
-    await _goToSplash();
-  }
+  bool _isRegisterMode = false;
 
   @override
   void dispose() {
@@ -60,8 +23,58 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  Future<void> _submit() async {
+    final email = _email.text.trim();
+    final pass = _pass.text.trim();
+    final auth = context.read<AuthProvider>();
+
+    if (email.isEmpty || !email.contains('@')) {
+      _showMessage('Ingresa un correo válido');
+      return;
+    }
+
+    if (pass.length < 6) {
+      _showMessage('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    try {
+      if (_isRegisterMode) {
+        await auth.register(email, pass);
+        _showMessage('Cuenta creada ✅ Revisa tu correo para verificar tu cuenta.');
+      } else {
+        await auth.login(email, pass);
+      }
+    } catch (e) {
+      _showMessage(
+        e.toString().replaceFirst('Exception: ', ''),
+      );
+    }
+  }
+
+  Future<void> _guest() async {
+    try {
+      await context.read<AuthProvider>().loginAsGuest();
+    } catch (_) {
+      _showMessage('No se pudo entrar como invitado');
+    }
+  }
+
+  void _showMessage(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(text),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final loading = auth.isLoading;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
       body: SafeArea(
@@ -72,27 +85,36 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const Spacer(),
 
-              // 🐱 Logo Kiki
               Center(
                 child: Image.asset(
                   'assets/images/kiki/kiki_idle_main_v2.png',
-                  height: 140,
+                  height: 150,
                   fit: BoxFit.contain,
                 ),
               ),
 
               const SizedBox(height: 16),
 
-              const Text(
-                'Kiki Finance',
+              Text(
+                _isRegisterMode ? 'Crea tu cuenta' : 'Bienvenido a Kiki Budget',
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(height: 10),
+
+              Text(
+                _isRegisterMode
+                    ? 'Registra tu cuenta para guardar tu progreso.'
+                    : 'Controla tus gastos con Kiki 🐾',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.black54),
+              ),
+
+              const SizedBox(height: 24),
 
               TextField(
                 controller: _email,
@@ -118,21 +140,32 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _loading ? null : _login,
-                  child: _loading
+                  onPressed: loading ? null : _submit,
+                  child: loading
                       ? const SizedBox(
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Entrar'),
+                      : Text(_isRegisterMode ? 'Crear cuenta' : 'Entrar'),
                 ),
               ),
 
               const SizedBox(height: 10),
 
               TextButton(
-                onPressed: _loading ? null : _guest,
+                onPressed: loading ? null : () {
+                  setState(() => _isRegisterMode = !_isRegisterMode);
+                },
+                child: Text(
+                  _isRegisterMode
+                      ? 'Ya tengo cuenta'
+                      : 'Crear cuenta',
+                ),
+              ),
+
+              TextButton(
+                onPressed: loading ? null : _guest,
                 child: const Text(
                   'Entrar sin cuenta',
                   style: TextStyle(color: Colors.black54),
@@ -140,7 +173,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
 
               const Spacer(),
-              const SizedBox(height: 10),
             ],
           ),
         ),

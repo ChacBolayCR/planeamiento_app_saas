@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../providers/budget_provider.dart';
+import '../screens/pro/upgrade_pro_screen.dart';
 
-/// Card “locked” para features Pro.
-/// Importante: en Free NO renderizamos el contenido real (para que no se vea al hacer scroll).
 class LockedProCard extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -64,31 +61,19 @@ class LockedProCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-
-            /// ✅ Toggle Pro para pruebas (activas/desactivas)
-            Consumer<BudgetProvider>(
-              builder: (_, budget, __) {
-                final label = budget.isPro ? 'Desactivar Pro' : 'Hazte Premium ✨';
-
-                return SizedBox(
-                  height: 46,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      budget.setIsPro(!budget.isPro);
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            budget.isPro ? 'Pro activado ✅' : 'Pro desactivado 👌',
-                          ),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    },
-                    child: Text(label),
-                  ),
-                );
-              },
+            SizedBox(
+              height: 46,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const UpgradeProScreen(),
+                    ),
+                  );
+                },
+                child: const Text('Ver Kiki Pro ✨'),
+              ),
             ),
           ],
         ),

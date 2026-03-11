@@ -6,8 +6,6 @@ class KikiMessageCard extends StatelessWidget {
   final KikiMood mood;
   final String message;
   final bool compact;
-
-  // ✅ nuevo
   final bool showAvatar;
 
   const KikiMessageCard({
@@ -15,46 +13,44 @@ class KikiMessageCard extends StatelessWidget {
     required this.mood,
     required this.message,
     this.compact = false,
-    this.showAvatar = true, // ✅ default
+    this.showAvatar = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    final EdgeInsets padding = compact
+    final padding = compact
         ? const EdgeInsets.all(12)
-        : const EdgeInsets.all(16);
+        : const EdgeInsets.fromLTRB(14, 14, 14, 8);
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: padding,
-        child: Row(
-          children: [
-            if (showAvatar) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: Image.asset(
-                  _kikiAssetForMood(mood),
-                  width: compact ? 38 : 44,
-                  height: compact ? 38 : 44,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              const SizedBox(width: 12),
-            ],
-            Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
+    return Padding(
+      padding: padding,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (showAvatar) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: Image.asset(
+                _kikiAssetForMood(mood),
+                width: compact ? 40 : 48,
+                height: compact ? 40 : 48,
+                fit: BoxFit.cover,
               ),
             ),
+            const SizedBox(width: 12),
           ],
-        ),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontSize: compact ? 14 : 15,
+                height: 1.35,
+                fontWeight: FontWeight.w600,
+                color: Colors.black.withOpacity(0.82),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

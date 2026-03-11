@@ -1,8 +1,10 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../providers/budget_provider.dart';
+import '../../providers/auth_provider.dart' as app_auth;
+import '../auth/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -12,10 +14,12 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  late TextEditingController _nameController;
   late TextEditingController _budgetController;
-  String _selectedCurrency = 'USD';
 
-  final List<Map<String, String>> _currencies = [
+  String _selectedCurrency = 'CRC';
+
+  final List<Map<String, String>> _currencies = const [
     {'code': 'USD', 'label': 'USD - Dólar'},
     {'code': 'CRC', 'label': 'CRC - Colón'},
     {'code': 'EUR', 'label': 'EUR - Euro'},
@@ -26,28 +30,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
 
-    // ✅ Evita leer provider “muy temprano” (causaba pantalla negra en algunos casos)
-    _budgetController = TextEditingController(text: '0');
+    _nameController = TextEditingController();
+    _budgetController = TextEditingController();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final provider = context.read<BudgetProvider>();
-      _budgetController.text = provider.monthlyBudget.toStringAsFixed(0);
-      setState(() => _selectedCurrency = provider.currencyCode);
+
+      final budget = context.read<BudgetProvider>();
+      final user = FirebaseAuth.instance.currentUser;
+
+      _nameController.text = user?.displayName ?? '';
+      _budgetController.text = budget.monthlyBudget.toStringAsFixed(0);
+      _selectedCurrency = budget.currencyCode;
+
+      setState(() {});
     });
   }
 
   @override
   void dispose() {
+    _nameController.dispose();
     _budgetController.dispose();
     super.dispose();
   }
 
-  void _saveProfile() {
-    final provider = context.read<BudgetProvider>();
+  Future<void> _saveProfile() async {
+    final budget = context.read<BudgetProvider>();
+    final auth = context.read<app_auth.AuthProvider>();
 
-    final budget = double.tryParse(_budgetController.text);
-    if (budget == null || budget <= 0) {
+    final parsedBudget = double.tryParse(_budgetController.text.trim());
+
+    if (parsedBudget == null || parsedBudget <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Ingresa un presupuesto válido'),
@@ -57,139 +70,260 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return;
     }
 
-    provider.setMonthlyBudget(budget);
-    provider.setCurrency(_selectedCurrency);
+    try {
+      budget.setMonthlyBudget(parsedBudget);
+      budget.setCurrency(_selectedCurrency);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Perfil actualizado ✅'),
-        behavior: SnackBarBehavior.floating,
+      final newName = _nameController.text.trim();
+      if (newName.isNotEmpty) {
+        await auth.updateDisplayName(newName);
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Perfil actualizado ✅'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      setState(() {});
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _logout() async {
+    await context.read<app_auth.AuthProvider>().logout();
+
+    if (!mounted) return;
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const LoginScreen(),
       ),
+      (_) => false,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final symbol = context.watch<BudgetProvider>().currencySymbol;
+    final budget = context.watch<BudgetProvider>();
+    final auth = context.watch<app_auth.AuthProvider>();
+    final user = FirebaseAuth.instance.currentUser;
+
+    final name = (user?.displayName?.trim().isNotEmpty ?? false)
+        ? user!.displayName!
+        : 'Usuario';
+
+    final email = user?.email ?? 'Invitado';
+
+    final isPro = budget.isPro;
+    final trialActive = budget.isTrialActive;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Perfil'),
         automaticallyImplyLeading: false,
       ),
-      //backgroundColor: const Color(0xFFF5F6FA),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Perfil',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Configura tu presupuesto y moneda',
-                style: TextStyle(color: Colors.grey),
-              ),
-              const SizedBox(height: 24),
-
-              /// PRESUPUESTO
-              TextField(
-                controller: _budgetController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Presupuesto mensual',
-                  prefixText: '$symbol ',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+              /// HEADER
+              Card(
+                elevation: 0,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 34,
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.12),
+                        child: const Icon(
+                          Icons.person,
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              email,
+                              style: const TextStyle(
+                                color: Colors.black54,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
 
               const SizedBox(height: 16),
 
-              /// MONEDA
-              DropdownButtonFormField<String>(
-                value: _selectedCurrency,
-                decoration: InputDecoration(
-                  labelText: 'Moneda',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+              /// ESTADO
+              Card(
+                elevation: 0,
+                child: ListTile(
+                  leading: const Icon(Icons.workspace_premium_rounded),
+                  title: const Text(
+                    'Estado de la cuenta',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    trialActive
+                        ? 'Pro Trial activo (${budget.trialDaysLeft} días restantes)'
+                        : isPro
+                            ? 'Kiki Pro activo'
+                            : 'Versión Free',
                   ),
                 ),
-                items: _currencies
-                    .map(
-                      (c) => DropdownMenuItem(
-                        value: c['code'],
-                        child: Text(c['label']!),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _selectedCurrency = value);
-                  }
-                },
               ),
 
-              /// ✅ DEBUG: Toggle Pro (solo en Debug)
-              if (kDebugMode) ...[
-                const SizedBox(height: 20),
-                Text(
-                  'Debug',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black.withOpacity(0.70),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Consumer<BudgetProvider>(
-                  builder: (_, provider, __) {
-                    return Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            const Expanded(
-                              child: Text(
-                                'Pro (modo pruebas)',
-                                style: TextStyle(fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                            Switch(
-                              value: provider.isPro,
-                              onChanged: provider.setIsPro,
-                            ),
-                          ],
+              const SizedBox(height: 16),
+
+              /// FORM
+              Card(
+                elevation: 0,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          labelText: 'Nombre',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
-                    );
-                  },
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _budgetController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Presupuesto mensual',
+                          prefixText: '${budget.currencySymbol} ',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: _selectedCurrency,
+                        decoration: InputDecoration(
+                          labelText: 'Moneda',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        items: _currencies
+                            .map(
+                              (c) => DropdownMenuItem(
+                                value: c['code'],
+                                child: Text(c['label']!),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => _selectedCurrency = value);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ],
+              ),
 
-              const Spacer(),
+              const SizedBox(height: 16),
+
+              /// RESUMEN RÁPIDO
+              Card(
+                elevation: 0,
+                child: ListTile(
+                  leading: const Icon(Icons.account_balance_wallet),
+                  title: const Text(
+                    'Presupuesto actual',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    '${budget.currencySymbol}${budget.monthlyBudget.toStringAsFixed(2)}',
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              Card(
+                elevation: 0,
+                child: ListTile(
+                  leading: const Icon(Icons.currency_exchange),
+                  title: const Text(
+                    'Moneda activa',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(budget.currencyCode),
+                ),
+              ),
+
+              const SizedBox(height: 24),
 
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _saveProfile,
+                  onPressed: auth.isLoading ? null : _saveProfile,
+                  child: auth.isLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Guardar cambios'),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.logout),
+                  label: const Text('Cerrar sesión'),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    backgroundColor: Colors.red,
                   ),
-                  child: const Text(
-                    'Guardar cambios',
-                    style: TextStyle(fontSize: 16),
-                  ),
+                  onPressed: auth.isLoading ? null : _logout,
                 ),
               ),
             ],

@@ -1,120 +1,188 @@
-import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/expense.dart';
 
-String monthKey(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}';
+String monthKey(DateTime d) =>
+    '${d.year}-${d.month.toString().padLeft(2, '0')}';
 
-
-class FreeLimitReachedException implements Exception {
-  final int limit;
-  FreeLimitReachedException(this.limit);
-
-  @override
-  String toString() => 'FreeLimitReachedException(limit: $limit)';
-}
 class BudgetProvider extends ChangeNotifier {
-  // ====== prefs keys
+
+  /// ===== FREE CONFIG =====
+  static const int freeMonthlyExpenseLimit = 25;
+
+  /// ===== TRIAL CONFIG =====
+  static const _kTrialStart = 'proTrialStart';
+  static const int trialDays = 7;
+
+  /// ===== PREF KEYS =====
   static const _kBudget = 'monthlyBudget';
   static const _kCurrency = 'currencyCode';
   static const _kSelectedMonth = 'selectedMonthKey';
   static const _kLastSeenMonth = 'lastSeenMonthKey';
-  static const _kDismissedMonth = 'dismissedNewMonthKey'; // para no repetir el mensaje
-  static const _kIsPro = 'isPro'; // flag local para pruebas
-  static String _kExpensesFor(String mk) => 'expenses_$mk';
-  static const int freeMonthlyExpenseLimit = 20;
+  static const _kDismissedMonth = 'dismissedNewMonthKey';
+  static const _kIsPro = 'isPro';
 
+  static String _kExpensesFor(String mk) => 'expenses_$mk';
 
   SharedPreferences? _prefs;
 
-  /// 💰 Presupuesto mensual
+  /// ===== USER SETTINGS =====
   double _monthlyBudget = 0;
   double get monthlyBudget => _monthlyBudget;
 
-  /// 💱 Moneda
   String _currencyCode = 'CRC';
   String get currencyCode => _currencyCode;
+
   String get currencySymbol => _currencyCode == 'USD' ? '\$' : '₡';
 
-  /// 📅 Mes seleccionado (clave YYYY-MM)
-  late String _selectedMonthKey;
-  String get selectedMonth => _selectedMonthKey;
-
-  /// 🆕 Nuevo mes
-  bool _isNewMonth = false;
-  bool get isNewMonth => _isNewMonth;
-
-  /// ⭐ Pro (feature-flag local para pruebas)
+  /// ===== PRO =====
   bool _isPro = false;
   bool get isPro => _isPro;
 
-  /// 📦 Cache en memoria de gastos por mes
-  /// (para no estar leyendo prefs cada build)
+  /// ===== MONTH =====
+  late String _selectedMonthKey;
+
+  String get selectedMonth => _selectedMonthKey;
+
+  DateTime get selectedMonthDate {
+    final parts = _selectedMonthKey.split('-');
+    return DateTime(int.parse(parts[0]), int.parse(parts[1]), 1);
+  }
+
+  /// ===== NEW MONTH MESSAGE =====
+  bool _isNewMonth = false;
+  bool get isNewMonth => _isNewMonth;
+
+  /// ===== CACHE =====
   final Map<String, List<Expense>> _expensesByMonth = {};
 
-  // =======================
-  // INIT (llamar 1 vez al inicio: Splash o MyApp)
-  // =======================
+  /// ==========================
+  /// INIT
+  /// ==========================
   Future<void> init() async {
     _prefs ??= await SharedPreferences.getInstance();
 
-    // selected month por default = mes actual
     final nowKey = monthKey(DateTime.now());
+
     _selectedMonthKey = _prefs!.getString(_kSelectedMonth) ?? nowKey;
 
-    // budget/currency
     _monthlyBudget = _prefs!.getDouble(_kBudget) ?? 0;
+
     _currencyCode = _prefs!.getString(_kCurrency) ?? 'CRC';
 
-    // pro flag
     _isPro = _prefs!.getBool(_kIsPro) ?? false;
 
-    // cargar gastos del mes seleccionado (y opcionalmente del actual)
+    /// ===== TRIAL CHECK =====
+    final trialStartString = _prefs!.getString(_kTrialStart);
+
+    if (trialStartString != null) {
+      final trialStart = DateTime.tryParse(trialStartString);
+
+      if (trialStart != null) {
+        final daysUsed = DateTime.now().difference(trialStart).inDays;
+
+        if (daysUsed >= trialDays) {
+          _isPro = false;
+          await _prefs!.remove(_kTrialStart);
+          await _prefs!.setBool(_kIsPro, false);
+        } else {
+          _isPro = true;
+        }
+      }
+    }
+
     await _loadMonthIfNeeded(_selectedMonthKey);
+
     if (_selectedMonthKey != nowKey) {
       await _loadMonthIfNeeded(nowKey);
     }
 
-    // marcar nuevo mes si aplica
     _checkNewMonthInternal();
 
     notifyListeners();
   }
 
-  /// Para activar/desactivar Pro durante pruebas (no UI todavía)
+  /// ==========================
+  /// PRO TRIAL
+  /// ==========================
+
+  bool get isTrialActive {
+    final trialStartString = _prefs?.getString(_kTrialStart);
+    if (trialStartString == null) return false;
+
+    final trialStart = DateTime.tryParse(trialStartString);
+    if (trialStart == null) return false;
+
+    final daysUsed = DateTime.now().difference(trialStart).inDays;
+
+    return daysUsed < trialDays;
+  }
+
+  int get trialDaysLeft {
+    final trialStartString = _prefs?.getString(_kTrialStart);
+    if (trialStartString == null) return 0;
+
+    final trialStart = DateTime.tryParse(trialStartString);
+    if (trialStart == null) return 0;
+
+    final daysUsed = DateTime.now().difference(trialStart).inDays;
+
+    final left = trialDays - daysUsed;
+
+    return left < 0 ? 0 : left;
+  }
+
+  Future<void> startProTrial() async {
+    _prefs ??= await SharedPreferences.getInstance();
+
+    final now = DateTime.now();
+
+    await _prefs!.setString(_kTrialStart, now.toIso8601String());
+    await _prefs!.setBool(_kIsPro, true);
+
+    _isPro = true;
+
+    notifyListeners();
+  }
+
   void setIsPro(bool value) {
     _isPro = value;
     _prefs?.setBool(_kIsPro, value);
     notifyListeners();
   }
 
-  // =======================
-  // MES
-  // =======================
-  void setSelectedMonth(String monthKey) {
-    _selectedMonthKey = monthKey;
-    _prefs?.setString(_kSelectedMonth, monthKey);
-    _loadMonthIfNeeded(monthKey); // async fire-and-forget
+  /// ==========================
+  /// FREE LIMIT
+  /// ==========================
+
+  bool get isFreeLimitReached {
+    if (_isPro) return false;
+    return currentMonthExpenses.length >= freeMonthlyExpenseLimit;
+  }
+
+  /// ==========================
+  /// MONTH
+  /// ==========================
+
+  void setSelectedMonth(String mk) {
+    _selectedMonthKey = mk;
+    _prefs?.setString(_kSelectedMonth, mk);
+
+    _loadMonthIfNeeded(mk);
+
     notifyListeners();
   }
 
-  DateTime get selectedMonthDate {
-    final parts = _selectedMonthKey.split('-'); // YYYY-MM
-    final y = int.parse(parts[0]);
-    final m = int.parse(parts[1]);
-    return DateTime(y, m, 1);
-  }
-
   void setSelectedMonthDate(DateTime date) {
-    final mk = monthKey(date);
-    setSelectedMonth(mk);
+    setSelectedMonth(monthKey(date));
   }
 
-  // =======================
-  // CONFIG
-  // =======================
+  /// ==========================
+  /// SETTINGS
+  /// ==========================
+
   void setMonthlyBudget(double value) {
     _monthlyBudget = value;
     _prefs?.setDouble(_kBudget, value);
@@ -127,52 +195,68 @@ class BudgetProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // =======================
-  // GASTOS (por mes seleccionado)
-  // =======================
+  /// ==========================
+  /// EXPENSES
+  /// ==========================
+
   List<Expense> get currentMonthExpenses =>
       List.unmodifiable(_expensesByMonth[_selectedMonthKey] ?? const []);
+
+  /// Backward compatibility
+  List<Expense> get expenses => currentMonthExpenses;
 
   double get currentMonthTotalSpent =>
       currentMonthExpenses.fold(0.0, (sum, e) => sum + e.amount);
 
   String get currentMonthDominantCategory {
     final totals = <String, double>{};
+
     for (final e in currentMonthExpenses) {
       totals[e.category] = (totals[e.category] ?? 0) + e.amount;
     }
-    if (totals.isEmpty) return '';
-    return totals.entries.reduce((a, b) => a.value > b.value ? a : b).key;
-  }
 
-  /// Backward-compat (si alguna pantalla aún usa budget.expenses / totalSpent)
-  List<Expense> get expenses => currentMonthExpenses;
-  double get totalSpent => currentMonthTotalSpent;
+    if (totals.isEmpty) return '';
+
+    return totals.entries
+        .reduce((a, b) => a.value > b.value ? a : b)
+        .key;
+  }
 
   void addExpense(Expense expense) {
-  final list = _expensesByMonth.putIfAbsent(_selectedMonthKey, () => []);
 
-  // ✅ Límite Free
-  if (!_isPro && list.length >= freeMonthlyExpenseLimit) {
-    throw FreeLimitReachedException(freeMonthlyExpenseLimit);
-  }
+    if (!_isPro &&
+        currentMonthExpenses.length >= freeMonthlyExpenseLimit) {
+      return;
+    }
 
-  list.add(expense);
-  _saveMonth(_selectedMonthKey);
-  notifyListeners();
-}
+    final list = _expensesByMonth.putIfAbsent(
+      _selectedMonthKey,
+      () => [],
+    );
 
-  void removeExpense(String id) {
-    final list = _expensesByMonth[_selectedMonthKey];
-    if (list == null) return;
-    list.removeWhere((e) => e.id == id);
+    list.add(expense);
+
     _saveMonth(_selectedMonthKey);
+
     notifyListeners();
   }
 
-  // =======================
-  // CÁLCULOS
-  // =======================
+  void removeExpense(String id) {
+    final list = _expensesByMonth[_selectedMonthKey];
+
+    if (list == null) return;
+
+    list.removeWhere((e) => e.id == id);
+
+    _saveMonth(_selectedMonthKey);
+
+    notifyListeners();
+  }
+
+  /// ==========================
+  /// CALCULATIONS
+  /// ==========================
+
   double totalByCategory(String category) {
     return currentMonthExpenses
         .where((e) => e.category == category)
@@ -181,62 +265,76 @@ class BudgetProvider extends ChangeNotifier {
 
   double categoryPercent(String category) {
     if (_monthlyBudget <= 0) return 0;
+
     final total = totalByCategory(category);
+
     return (total / _monthlyBudget).clamp(0.0, 1.0);
   }
 
-  // =======================
-  // NUEVO MES (Kiki)
-  // =======================
+  double totalSpentForMonth(DateTime month) {
+    final mk = monthKey(DateTime(month.year, month.month, 1));
+
+    final list = _expensesByMonth[mk] ?? const <Expense>[];
+
+    return list.fold<double>(0.0, (sum, e) => sum + e.amount);
+  }
+
+  /// ==========================
+  /// NEW MONTH
+  /// ==========================
+
   void checkNewMonth() {
-    // Llama esto al entrar al dashboard si quieres (opcional)
     _checkNewMonthInternal();
     notifyListeners();
   }
 
   void dismissNewMonthMessage() {
-    // marca “ya vi el mensaje” para este mes actual
     final nowKey = monthKey(DateTime.now());
+
     _prefs?.setString(_kDismissedMonth, nowKey);
+
     _isNewMonth = false;
+
     notifyListeners();
   }
 
   void _checkNewMonthInternal() {
     final nowKey = monthKey(DateTime.now());
+
     final lastSeen = _prefs?.getString(_kLastSeenMonth);
+
     final dismissedFor = _prefs?.getString(_kDismissedMonth);
 
-    // nuevo mes si: ya había un lastSeen distinto al nowKey
     final changed = (lastSeen != null && lastSeen != nowKey);
 
-    // si ya lo descarté para este mes, no mostrar
     final alreadyDismissed = dismissedFor == nowKey;
 
     _isNewMonth = changed && !alreadyDismissed;
 
-    // actualizar last seen al mes actual (para próximas entradas)
     _prefs?.setString(_kLastSeenMonth, nowKey);
   }
 
-  // =======================
-  // PERSISTENCIA
-  // =======================
+  /// ==========================
+  /// PERSISTENCE
+  /// ==========================
+
   Future<void> _loadMonthIfNeeded(String mk) async {
     if (_expensesByMonth.containsKey(mk)) return;
+
     await _loadMonth(mk);
   }
 
   Future<void> _loadMonth(String mk) async {
-    if (_prefs == null) return;
 
-    final raw = _prefs!.getString(_kExpensesFor(mk));
+    final raw = _prefs?.getString(_kExpensesFor(mk));
+
     if (raw == null || raw.isEmpty) {
       _expensesByMonth[mk] = [];
       return;
     }
 
     final decoded = jsonDecode(raw);
+
     if (decoded is! List) {
       _expensesByMonth[mk] = [];
       return;
@@ -249,20 +347,12 @@ class BudgetProvider extends ChangeNotifier {
   }
 
   void _saveMonth(String mk) {
-    if (_prefs == null) return;
+
     final list = _expensesByMonth[mk] ?? [];
-    final payload = jsonEncode(list.map((e) => e.toMap()).toList());
-    _prefs!.setString(_kExpensesFor(mk), payload);
-  }
 
-    /// ✅ Exponer key builder (útil para charts)
-  String monthKeyFor(DateTime d) => monthKey(d);
+    final payload =
+        jsonEncode(list.map((e) => e.toMap()).toList());
 
-  /// ✅ Total gastado para un mes específico (carga prefs si hace falta)
-  Future<double> totalSpentForMonth(DateTime month) async {
-    final mk = monthKey(DateTime(month.year, month.month, 1));
-    await _loadMonthIfNeeded(mk);
-    final list = _expensesByMonth[mk] ?? const <Expense>[];
-    return list.fold<double>(0.0, (sum, e) => sum + e.amount);
+    _prefs?.setString(_kExpensesFor(mk), payload);
   }
 }

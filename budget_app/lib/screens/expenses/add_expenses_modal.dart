@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../../providers/budget_provider.dart';
 import '../../models/expense.dart';
+import '../../providers/budget_provider.dart';
 
 class AddExpenseModal extends StatefulWidget {
   const AddExpenseModal({super.key});
@@ -19,8 +19,9 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
   final _amountController = TextEditingController();
 
   String _selectedCategory = 'General';
+  bool _isSaving = false;
 
-  final List<String> _categories = [
+  final List<String> _categories = const [
     'General',
     'Servicios',
     'Alquiler',
@@ -29,8 +30,6 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
     'Marketing',
     'Entretenimiento',
   ];
-
-  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -42,20 +41,28 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
   bool get _isFormValid {
     final title = _titleController.text.trim();
     final amountText = _amountController.text.trim();
+
     if (title.isEmpty || amountText.isEmpty) return false;
-    final amount = double.tryParse(amountText.replaceAll(',', '.'));
-    if (amount == null || amount <= 0) return false;
-    return true;
+
+    final amount = double.tryParse(
+      amountText.replaceAll(',', '.'),
+    );
+
+    return amount != null && amount > 0;
   }
 
-  Future<void> _showFreeLimitDialog(int limit) async {
-    final budget = context.read<BudgetProvider>();
-
+  Future<void> _showFreeLimitDialog(
+    BuildContext context,
+    BudgetProvider budget,
+  ) async {
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Límite Free alcanzado'),
-        content: Text('En la versión gratuita puedes registrar hasta $limit gastos por mes.'),
+        content: Text(
+          'En la versión gratuita puedes registrar hasta '
+          '${BudgetProvider.freeMonthlyExpenseLimit} gastos por mes.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -81,28 +88,56 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
     );
   }
 
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   Future<void> _saveExpense() async {
+    final budget = context.read<BudgetProvider>();
+
     if (!_isFormValid) {
       _formKey.currentState?.validate();
+      return;
+    }
+
+    if (budget.isFreeLimitReached) {
+      await _showFreeLimitDialog(context, budget);
       return;
     }
 
     FocusScope.of(context).unfocus();
     setState(() => _isSaving = true);
 
-    final title = _titleController.text.trim();
-    final amountText = _amountController.text.trim().replaceAll(',', '.');
-    final amount = double.parse(amountText);
-
-    final expense = Expense(
-      title: title,
-      category: _selectedCategory,
-      amount: amount,
-      date: DateTime.now(),
-    );
-
     try {
-      context.read<BudgetProvider>().addExpense(expense);
+      final title = _titleController.text.trim();
+      final amountText = _amountController.text.trim().replaceAll(',', '.');
+      final amount = double.tryParse(amountText);
+
+      if (title.isEmpty) {
+        _showError('Agrega una descripción');
+        return;
+      }
+
+      if (amount == null || amount <= 0) {
+        _showError('Monto inválido');
+        return;
+      }
+
+      final expense = Expense(
+        title: title,
+        category: _selectedCategory,
+        amount: amount,
+        date: DateTime.now(),
+      );
+
+      budget.addExpense(expense);
+
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -111,19 +146,22 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
         ),
       );
 
-      await Future.delayed(const Duration(milliseconds: 200));
-      if (mounted) Navigator.pop(context);
-    } on FreeLimitReachedException catch (e) {
-      // ✅ Mensaje elegante + opción debug para activar Pro
-      await _showFreeLimitDialog(e.limit);
+      await Future.delayed(const Duration(milliseconds: 150));
+
+      if (!mounted) return;
+      Navigator.pop(context);
     } finally {
-      if (mounted) setState(() => _isSaving = false);
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final symbol = context.select<BudgetProvider, String>((p) => p.currencySymbol);
+    final symbol = context.select<BudgetProvider, String>(
+      (p) => p.currencySymbol,
+    );
 
     return Padding(
       padding: EdgeInsets.only(
@@ -141,7 +179,10 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
           children: [
             const Text(
               'Nuevo gasto',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
@@ -154,7 +195,9 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                 border: OutlineInputBorder(),
               ),
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Describe el gasto';
+                if (v == null || v.trim().isEmpty) {
+                  return 'Agrega una descripción';
+                }
                 return null;
               },
             ),
@@ -163,19 +206,30 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
             TextFormField(
               controller: _amountController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: <TextInputFormatter>[
-                FilteringTextInputFormatter.allow(RegExp(r'[\d\.,]')),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(
+                  RegExp(r'[\d\.,]'),
+                ),
               ],
               decoration: InputDecoration(
                 labelText: 'Monto',
                 prefixText: '$symbol ',
-                border: const OutlineInputBorder(),
                 hintText: '0.00',
+                border: const OutlineInputBorder(),
               ),
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Ingresa un monto';
-                final parsed = double.tryParse(v.trim().replaceAll(',', '.'));
-                if (parsed == null || parsed <= 0) return 'Monto inválido';
+                if (v == null || v.trim().isEmpty) {
+                  return 'Ingresa un monto';
+                }
+
+                final parsed = double.tryParse(
+                  v.trim().replaceAll(',', '.'),
+                );
+
+                if (parsed == null || parsed <= 0) {
+                  return 'Monto inválido';
+                }
+
                 return null;
               },
             ),
@@ -196,7 +250,9 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                   )
                   .toList(),
               onChanged: (value) {
-                if (value != null) setState(() => _selectedCategory = value);
+                if (value != null) {
+                  setState(() => _selectedCategory = value);
+                }
               },
             ),
 
@@ -208,8 +264,8 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                 onPressed: _isSaving || !_isFormValid ? null : _saveExpense,
                 child: _isSaving
                     ? const SizedBox(
-                        height: 20,
-                        width: 20,
+                        width: 18,
+                        height: 18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Text('Guardar gasto'),
