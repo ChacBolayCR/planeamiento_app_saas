@@ -173,8 +173,6 @@ class AuthProvider extends ChangeNotifier {
       await user.reload();
     } on FirebaseException catch (e) {
       throw Exception('No se pudo subir la imagen: ${e.message ?? e.code}');
-    } on FirebaseAuthException catch (e) {
-      throw Exception(_mapFirebaseError(e));
     } finally {
       _setLoading(false);
     }

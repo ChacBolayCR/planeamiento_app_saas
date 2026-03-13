@@ -8,6 +8,7 @@ import 'providers/auth_provider.dart';
 import 'providers/budget_provider.dart';
 
 import 'screens/onboarding/onboarding_gate.dart';
+import 'screens/dashboard/dashboard_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,13 +27,35 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => BudgetProvider()),
+
+        /// AUTH
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider(),
+        ),
+
+        /// BUDGET
+        ChangeNotifierProvider(
+          create: (_) {
+            final provider = BudgetProvider();
+            provider.init(); // IMPORTANTE
+            return provider;
+          },
+        ),
       ],
-      child: const MaterialApp(
+      child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Kiki Finance',
-        home: OnboardingGate(),
+
+        theme: ThemeData(
+          useMaterial3: true,
+          colorSchemeSeed: Colors.indigo,
+        ),
+
+        routes: {
+          '/dashboard': (_) => const DashboardScreen(),
+        },
+
+        home: const OnboardingGate(),
       ),
     );
   }

@@ -47,8 +47,21 @@ class BudgetProvider extends ChangeNotifier {
   String get selectedMonth => _selectedMonthKey;
 
   DateTime get selectedMonthDate {
-    final parts = _selectedMonthKey.split('-');
-    return DateTime(int.parse(parts[0]), int.parse(parts[1]), 1);
+    try {
+      final parts = _selectedMonthKey.split('-');
+
+      if (parts.length != 2) {
+        return DateTime.now();
+      }
+
+      return DateTime(
+        int.parse(parts[0]),
+        int.parse(parts[1]),
+        1,
+      );
+    } catch (_) {
+      return DateTime.now();
+    }
   }
 
   /// ===== NEW MONTH MESSAGE =====

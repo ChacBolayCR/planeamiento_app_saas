@@ -41,16 +41,12 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       if (_isRegisterMode) {
         await auth.register(email, pass);
-
-        _showMessage(
-            'Cuenta creada ✅ Revisa tu correo para verificar tu cuenta.');
+        _showMessage('Cuenta creada ✅ Revisa tu correo.');
       } else {
         await auth.login(email, pass);
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, '/dashboard');
       }
-
-      if (!mounted) return;
-
-      Navigator.pushReplacementNamed(context, '/dashboard');
     } catch (e) {
       _showMessage(e.toString().replaceFirst('Exception: ', ''));
     }
@@ -59,9 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _guest() async {
     try {
       await context.read<AuthProvider>().loginAsGuest();
-
       if (!mounted) return;
-
       Navigator.pushReplacementNamed(context, '/dashboard');
     } catch (_) {
       _showMessage('No se pudo entrar como invitado');
@@ -69,8 +63,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showMessage(String text) {
-    if (!mounted) return;
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(text),
@@ -89,134 +81,97 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height - 48,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Spacer(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
 
-                Center(
-                  child: Image.asset(
-                    'assets/images/kiki/kiki_idle_main_v2.png',
-                    height: 150,
-                  ),
+              const SizedBox(height: 40),
+
+              Center(
+                child: Image.asset(
+                  'assets/images/kiki/kiki_idle_main_v2.png',
+                  height: 150,
                 ),
+              ),
 
-                const SizedBox(height: 16),
+              const SizedBox(height: 24),
 
-                Text(
-                  _isRegisterMode
-                      ? 'Crea tu cuenta'
-                      : 'Bienvenido a Kiki Finance',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
+              Text(
+                _isRegisterMode ? 'Crea tu cuenta' : 'Bienvenido a Kiki Finance',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
                 ),
+              ),
 
-                const SizedBox(height: 10),
+              const SizedBox(height: 10),
 
-                Text(
-                  _isRegisterMode
-                      ? 'Registra tu cuenta para guardar tu progreso.'
-                      : 'Controla tus gastos con Kiki 🐾',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.black54),
+              Text(
+                _isRegisterMode
+                    ? 'Registra tu cuenta para guardar tu progreso.'
+                    : 'Controla tus gastos con Kiki 🐾',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.black54),
+              ),
+
+              const SizedBox(height: 32),
+
+              TextField(
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Correo',
+                  border: OutlineInputBorder(),
                 ),
+              ),
 
-                const SizedBox(height: 24),
+              const SizedBox(height: 12),
 
-                TextField(
-                  controller: _email,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Correo',
-                    border: OutlineInputBorder(),
-                  ),
+              TextField(
+                controller: _pass,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Contraseña',
+                  border: OutlineInputBorder(),
                 ),
+              ),
 
-                const SizedBox(height: 12),
-
-                TextField(
-                  controller: _pass,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Contraseña',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                SizedBox(
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: loading ? null : _submit,
-                    child: loading
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(
-                            _isRegisterMode ? 'Crear cuenta' : 'Entrar'),
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                TextButton(
-                  onPressed: loading
-                      ? null
-                      : () {
-                          setState(() {
-                            _isRegisterMode = !_isRegisterMode;
-                          });
-                        },
-                  child: Text(
-                    _isRegisterMode ? 'Ya tengo cuenta' : 'Crear cuenta',
-                  ),
-                ),
-
-                TextButton(
-                  onPressed: loading ? null : _guest,
-                  child: const Text(
-                    'Entrar sin cuenta',
-                    style: TextStyle(color: Colors.black54),
-                  ),
-                ),
-
-                const SizedBox(height: 10),
+              const SizedBox(height: 20),
 
               SizedBox(
                 height: 48,
-                child: OutlinedButton.icon(
-                  icon: Image.asset(
-                    'assets/images/google_logo.png',
-                    height: 20,
-                  ),
-                  label: const Text('Continuar con Google'),
-                  onPressed: loading
-                  ? null
-                  : () async {
-                    try {
-                      await context.read<AuthProvider>().signInWithGoogle();
-                    } catch (e) {
-                      _showMessage(
-                        e.toString().replaceFirst('Exception: ', ''),
-                      );
-                    }
-                  },
+                child: ElevatedButton(
+                  onPressed: loading ? null : _submit,
+                  child: loading
+                      ? const CircularProgressIndicator()
+                      : Text(_isRegisterMode ? 'Crear cuenta' : 'Entrar'),
                 ),
+              ),
+
+              const SizedBox(height: 12),
+
+              TextButton(
+                onPressed: () {
+                  setState(() => _isRegisterMode = !_isRegisterMode);
+                },
+                child: Text(
+                  _isRegisterMode
+                      ? 'Ya tengo cuenta'
+                      : 'Crear cuenta',
                 ),
-                const Spacer(),
-              ],
-            ),
+              ),
+
+              TextButton(
+                onPressed: loading ? null : _guest,
+                child: const Text(
+                  'Entrar sin cuenta',
+                  style: TextStyle(color: Colors.black54),
+                ),
+              ),
+
+              const SizedBox(height: 40),
+            ],
           ),
         ),
       ),
