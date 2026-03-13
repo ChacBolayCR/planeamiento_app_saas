@@ -1,11 +1,13 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'firebase_options.dart';
+
 import 'providers/auth_provider.dart';
 import 'providers/budget_provider.dart';
-import 'app.dart';
+
+import 'screens/onboarding/onboarding_gate.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,16 +16,24 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  final budgetProvider = BudgetProvider();
-  await budgetProvider.init();
+  runApp(const MyApp());
+}
 
-  runApp(
-    MultiProvider(
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider<BudgetProvider>.value(value: budgetProvider),
+        ChangeNotifierProvider(create: (_) => BudgetProvider()),
       ],
-      child: const MyApp(),
-    ),
-  );
+      child: const MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Kiki Finance',
+        home: OnboardingGate(),
+      ),
+    );
+  }
 }

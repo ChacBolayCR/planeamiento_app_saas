@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
-import '../auth/login_screen.dart';
-import '../main_navigation.dart';
+import '../../screens/auth/login_screen.dart';
+import '../../screens/dashboard/dashboard_screen.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
@@ -11,10 +11,12 @@ class AuthGate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
-      builder: (_, auth, __) {
+      builder: (context, auth, _) {
+
         if (auth.isLoggedIn) {
-          return const MainNavigation();
+          return const DashboardHome();
         }
+
         return const LoginScreen();
       },
     );

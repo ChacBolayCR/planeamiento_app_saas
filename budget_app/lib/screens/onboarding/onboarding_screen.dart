@@ -11,6 +11,7 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
+
   final PageController _controller = PageController();
   int _page = 0;
 
@@ -28,44 +29,66 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  Widget _pageItem({
-    required IconData icon,
-    required String title,
+  Widget _kikiPage({
+    required String message,
     required String subtitle,
   }) {
     return Padding(
-      padding: const EdgeInsets.all(30),
+      padding: const EdgeInsets.symmetric(horizontal: 28),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
 
-          Icon(
-            icon,
-            size: 100,
-            color: Colors.blue,
+          /// Kiki
+          AnimatedScale(
+            duration: const Duration(milliseconds: 300),
+            scale: _page == 0 ? 1 : 1.05,
+            child: Image.asset(
+              'assets/images/kiki/kiki_idle_main_v2.png',
+              height: 160,
+            ),
           ),
 
           const SizedBox(height: 40),
 
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
+          /// burbuja
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  blurRadius: 10,
+                  color: Colors.black.withOpacity(.05),
+                )
+              ],
             ),
-          ),
+            child: Column(
+              children: [
 
-          const SizedBox(height: 16),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
 
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.black54,
+                const SizedBox(height: 10),
+
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
             ),
-          ),
+          )
         ],
       ),
     );
@@ -73,36 +96,83 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF7F8FA),
+
       body: PageView(
         controller: _controller,
         onPageChanged: (i) => setState(() => _page = i),
         children: [
 
-          _pageItem(
-            icon: Icons.pets,
-            title: 'Bienvenido a Kiki',
-            subtitle: 'Controla tus gastos\nsin hojas de Excel',
+          _kikiPage(
+            message: "Hola, soy Kiki 🐾",
+            subtitle: "Te ayudaré a controlar tus gastos\nsin hojas de Excel.",
           ),
 
-          _pageItem(
-            icon: Icons.bar_chart,
-            title: 'Entiende tu dinero',
-            subtitle: 'Kiki te muestra en qué\nestás gastando realmente',
+          _kikiPage(
+            message: "Descubre en qué gastas",
+            subtitle: "Kiki analiza tus gastos y te muestra\ncómo mejorar tus finanzas.",
+          ),
+
+          _kikiPage(
+            message: "Kiki también puede ayudarte más 🧠",
+            subtitle: "Con Kiki Pro podrás ver patrones de gasto, metas y análisis más profundos.",
+          ),
+
+          _kikiPage(
+            message: "Empieza hoy mismo",
+            subtitle: "Registra tus gastos en segundos\ny deja que Kiki haga el resto.",
           ),
         ],
       ),
 
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(20),
-        child: ElevatedButton(
-          onPressed: _page == 1
-              ? _finish
-              : () => _controller.nextPage(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+
+              /// dots
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  4,
+                  (index) => Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: _page == index ? 12 : 8,
+                    height: _page == index ? 12 : 8,
+                    decoration: BoxDecoration(
+                      color: _page == index
+                          ? Colors.blue
+                          : Colors.grey.shade400,
+                      shape: BoxShape.circle,
+                    ),
                   ),
-          child: Text(_page == 1 ? 'Empezar' : 'Siguiente'),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              /// botón
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _page == 3
+                      ? _finish
+                      : () => _controller.nextPage(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          ),
+                  child: Text(
+                    _page == 3 ? "Empezar" : "Siguiente",
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
