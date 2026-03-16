@@ -24,43 +24,73 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
-    final email = _email.text.trim();
-    final pass = _pass.text.trim();
-    final auth = context.read<AuthProvider>();
 
-    if (email.isEmpty || !email.contains('@')) {
-      _showMessage('Ingresa un correo válido');
-      return;
-    }
+  final email = _email.text.trim();
+  final pass = _pass.text.trim();
+  final auth = context.read<AuthProvider>();
 
-    if (pass.length < 6) {
-      _showMessage('La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
-
-    try {
-      if (_isRegisterMode) {
-        await auth.register(email, pass);
-        _showMessage('Cuenta creada ✅ Revisa tu correo.');
-      } else {
-        await auth.login(email, pass);
-        if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/dashboard');
-      }
-    } catch (e) {
-      _showMessage(e.toString().replaceFirst('Exception: ', ''));
-    }
+  if (email.isEmpty || !email.contains('@')) {
+    _showMessage('Ingresa un correo válido');
+    return;
   }
+
+  if (pass.length < 6) {
+    _showMessage('La contraseña debe tener al menos 6 caracteres');
+    return;
+  }
+
+  try {
+
+    if (_isRegisterMode) {
+
+      await auth.register(email, pass);
+
+      if (!mounted) return;
+
+      _showMessage('Cuenta creada ✅ Revisa tu correo.');
+
+      setState(() {
+        _isRegisterMode = false;
+      });
+
+    } else {
+
+      await auth.login(email, pass);
+
+      if (!mounted) return;
+
+      Navigator.pushReplacementNamed(context, '/dashboard');
+    }
+
+  } catch (e) {
+
+    final msg = e.toString().replaceFirst('Exception: ', '');
+
+    _showMessage(msg);
+
+  }
+}
+
 
   Future<void> _guest() async {
-    try {
-      await context.read<AuthProvider>().loginAsGuest();
-      if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/dashboard');
-    } catch (_) {
-      _showMessage('No se pudo entrar como invitado');
-    }
+
+  try {
+
+    await context.read<AuthProvider>().loginAsGuest();
+
+    if (!mounted) return;
+
+    Navigator.pushReplacementNamed(context, '/dashboard');
+
+  } catch (e) {
+
+    final msg = e.toString().replaceFirst('Exception: ', '');
+
+    _showMessage(msg);
+
   }
+}
+
 
   void _showMessage(String text) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -144,7 +174,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: ElevatedButton(
                   onPressed: loading ? null : _submit,
                   child: loading
-                      ? const CircularProgressIndicator()
+                  ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+
                       : Text(_isRegisterMode ? 'Crear cuenta' : 'Entrar'),
                 ),
               ),

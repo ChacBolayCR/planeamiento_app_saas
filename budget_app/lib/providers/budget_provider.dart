@@ -42,7 +42,9 @@ class BudgetProvider extends ChangeNotifier {
   bool get isPro => _isPro;
 
   /// ===== MONTH =====
-  late String _selectedMonthKey;
+  String _selectedMonthKey =
+    "${DateTime.now().year}-${DateTime.now().month}";
+
 
   String get selectedMonth => _selectedMonthKey;
 
@@ -237,8 +239,7 @@ class BudgetProvider extends ChangeNotifier {
 
   void addExpense(Expense expense) {
 
-    if (!_isPro &&
-        currentMonthExpenses.length >= freeMonthlyExpenseLimit) {
+    if (!_isPro && isFreeLimitReached) {
       return;
     }
 
@@ -253,6 +254,7 @@ class BudgetProvider extends ChangeNotifier {
 
     notifyListeners();
   }
+
 
   void removeExpense(String id) {
     final list = _expensesByMonth[_selectedMonthKey];
@@ -361,11 +363,20 @@ class BudgetProvider extends ChangeNotifier {
 
   void _saveMonth(String mk) {
 
+    if (_prefs == null) return;
+
     final list = _expensesByMonth[mk] ?? [];
 
     final payload =
         jsonEncode(list.map((e) => e.toMap()).toList());
 
-    _prefs?.setString(_kExpensesFor(mk), payload);
+    _prefs!.setString(_kExpensesFor(mk), payload);
   }
+  
+  List<Expense> get allExpenses {
+    return _expensesByMonth.values
+      .expand((month) => month)
+      .toList();
+  } 
+
 }
