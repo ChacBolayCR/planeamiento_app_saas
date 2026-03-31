@@ -31,7 +31,7 @@ class MonthlyTrendChartCard extends StatelessWidget {
       future: () async {
         final values = <double>[];
         for (final m in monthsList) {
-          values.add(await budget.totalSpentForMonth(m));
+          values.add(budget.totalSpentForMonth(m));
         }
         return values;
       }(),

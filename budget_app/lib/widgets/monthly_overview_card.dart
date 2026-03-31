@@ -19,76 +19,67 @@ class MonthlyOverviewCard extends StatelessWidget {
     final double percentUsed =
         budget <= 0 ? 0.0 : (spent / budget).clamp(0.0, 1.0);
 
-    final int usedPct = (percentUsed * 100).round();
-    final int remainingPct = ((1.0 - percentUsed) * 100).round();
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Resumen del mes',
-              style: TextStyle(color: Colors.black54),
-            ),
-            const SizedBox(height: 10),
-
-            Row(
-              children: [
-                Expanded(
-                  child: _MiniStat(
-                    label: 'Gastado',
-                    value: '$currencySymbol${spent.toStringAsFixed(2)}',
-                    valueStyle: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _MiniStat(
-                    label: 'Restante',
-                    value: '$currencySymbol${remaining.toStringAsFixed(2)}',
-                    valueStyle: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: remaining >= 0 ? Colors.green : Colors.red,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: LinearProgressIndicator(
-                value: percentUsed,
-                minHeight: 10,
+    return SizedBox(
+      height: 130, // 👈 un poco más compacto
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(14), // 👈 menos padding
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Resumen del mes',
+                style: TextStyle(color: Colors.black54),
               ),
-            ),
-            const SizedBox(height: 8),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Usado: $usedPct%'),
-                Text('Restante: $remainingPct%'),
-              ],
-            ),
+              const SizedBox(height: 8),
 
-            const SizedBox(height: 8),
-            Text(
-              'Presupuesto: $currencySymbol${budget.toStringAsFixed(2)}',
-              style: const TextStyle(color: Colors.black45),
-            ),
-          ],
+              Row(
+                children: [
+                  Expanded(
+                    child: _MiniStat(
+                      label: 'Gastado',
+                      value:
+                          '$currencySymbol${spent.toStringAsFixed(0)}',
+                      valueStyle: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _MiniStat(
+                      label: 'Restante',
+                      value:
+                          '$currencySymbol${remaining.toStringAsFixed(0)}',
+                      valueStyle: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color:
+                            remaining >= 0 ? Colors.green : Colors.red,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 10),
+
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  value: percentUsed,
+                  minHeight: 6,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -111,9 +102,17 @@ class _MiniStat extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.black54)),
-        const SizedBox(height: 6),
-        Text(value, style: valueStyle),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.black54),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: valueStyle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis, // 👈 anti overflow extra
+        ),
       ],
     );
   }

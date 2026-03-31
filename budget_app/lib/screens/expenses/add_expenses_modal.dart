@@ -5,9 +5,16 @@ import 'package:provider/provider.dart';
 
 import '../../models/expense.dart';
 import '../../providers/budget_provider.dart';
+import '../../utils/smart_expense_parser.dart';
 
 class AddExpenseModal extends StatefulWidget {
-  const AddExpenseModal({super.key});
+
+  final String? prefilledCategory;
+
+  const AddExpenseModal({
+    super.key,
+    this.prefilledCategory,
+  });
 
   @override
   State<AddExpenseModal> createState() => _AddExpenseModalState();
@@ -18,7 +25,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
 
-  String _selectedCategory = 'General';
+  late String _selectedCategory;
   bool _isSaving = false;
 
   final List<String> _categories = const [
@@ -29,7 +36,22 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
     'Transporte',
     'Marketing',
     'Entretenimiento',
+    'Café',
+    'Compras'
   ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    /// 🔥 AQUÍ está la magia
+    _selectedCategory = widget.prefilledCategory ?? 'General';
+
+    /// 👉 UX PRO: si viene prefilled, autocompleta título
+    if (widget.prefilledCategory != null) {
+      _titleController.text = widget.prefilledCategory!;
+    }
+  }
 
   @override
   void dispose() {
@@ -187,19 +209,45 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
             ),
             const SizedBox(height: 16),
 
+            /// 🧠 Smart hint si viene prefilled
+            if (widget.prefilledCategory != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'Categoría rápida: ${widget.prefilledCategory}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ),
+
             TextFormField(
+              
               controller: _titleController,
               textCapitalization: TextCapitalization.sentences,
               decoration: const InputDecoration(
-                labelText: 'Descripción',
+                labelText: 'Descripción (ej: café 1500)',
                 border: OutlineInputBorder(),
               ),
+              onChanged: (value) {
+                
+                final parsed = SmartExpenseParser.parse(value);
+                setState(() {
+                  _selectedCategory = SmartExpenseParser.detectCategory(parsed.title);
+                });
+
+                if (parsed.amount != null) {
+                  _amountController.text = parsed.amount.toString();
+                }
+              },
               validator: (v) {
                 if (v == null || v.trim().isEmpty) {
                   return 'Agrega una descripción';
                 }
                 return null;
               },
+              
             ),
             const SizedBox(height: 12),
 

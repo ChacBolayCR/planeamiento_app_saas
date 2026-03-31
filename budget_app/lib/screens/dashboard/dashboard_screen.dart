@@ -58,7 +58,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
       body: _pages[_index],
 
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: _index == 0
+        ? FloatingActionButton(
         onPressed: () {
           showModalBottomSheet(
             context: context,
@@ -68,7 +69,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           );
         },
         child: const Icon(Icons.add),
-      ),
+      )
+      : null,
 
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
@@ -135,7 +137,6 @@ class DashboardHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     final budget = context.watch<BudgetProvider>();
 
     final selected = budget.selectedMonthDate;
@@ -143,8 +144,8 @@ class DashboardHome extends StatelessWidget {
     final isCurrentMonth = _isSameMonth(selected, now);
 
     final monthExpenses = budget.currentMonthExpenses;
-    final hasMonthExpenses = monthExpenses.isNotEmpty;
-    final monthSpent = budget.currentMonthTotalSpent;
+    final hasExpenses = monthExpenses.isNotEmpty;
+    final spent = budget.currentMonthTotalSpent;
 
     final dominant = budget.currentMonthDominantCategory;
     final dominantAmount =
@@ -155,24 +156,21 @@ class DashboardHome extends StatelessWidget {
 
     final freeLimit = BudgetProvider.freeMonthlyExpenseLimit;
 
-    /// 🧠 FINANCIAL SCORE
     final score = KikiInsightsService.financialScore(
       budget: budget.monthlyBudget,
-      spent: monthSpent,
+      spent: spent,
       expenses: monthExpenses,
     );
 
-    /// 💡 DAILY INSIGHT
     final dailyInsight =
         KikiInsightsService.buildDailyInsight(monthExpenses);
 
-    /// 🏆 ACHIEVEMENTS
     final achievements = AchievementService
         .evaluate(budget)
         .where((a) => a.unlocked)
         .toList();
 
-      final streak = StreakService.calculateStreak(monthExpenses);
+    final streak = StreakService.calculateStreak(monthExpenses);
 
     void openAddExpense() {
       showModalBottomSheet(
@@ -190,15 +188,35 @@ class DashboardHome extends StatelessWidget {
       );
     }
 
+    Widget quickAdd(String emoji, String category) {
+      return GestureDetector(
+        onTap: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            builder: (_) =>
+                AddExpenseModal(prefilledCategory: category),
+          );
+        },
+        child: Column(
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 26)),
+            const SizedBox(height: 4),
+            Text(category, style: const TextStyle(fontSize: 12)),
+          ],
+        ),
+      );
+    }
+
     final insight = KikiInsightsService.buildInsight(
       isNewMonth: budget.isNewMonth,
       isPro: budget.isPro,
       isCurrentMonth: isCurrentMonth,
-      hasExpenses: hasMonthExpenses,
+      hasExpenses: hasExpenses,
       expenseCount: monthExpenses.length,
       freeLimit: freeLimit,
       monthlyBudget: budget.monthlyBudget,
-      totalSpent: monthSpent,
+      totalSpent: spent,
       dominantCategory: dominant,
       dominantAmount: dominantAmount,
       expenses: monthExpenses,
@@ -207,17 +225,14 @@ class DashboardHome extends StatelessWidget {
     );
 
     KikiMood mood;
-
-    if (!hasMonthExpenses) {
+    if (!hasExpenses) {
       mood = KikiMood.neutral;
     } else if (budget.monthlyBudget > 0 &&
-        monthSpent >= budget.monthlyBudget) {
+        spent >= budget.monthlyBudget) {
       mood = KikiMood.overbudget;
-    } else if (budget.monthlyBudget > 0 &&
-        monthSpent >= budget.monthlyBudget * 0.85) {
+    } else if (spent >= budget.monthlyBudget * 0.85) {
       mood = KikiMood.warning;
-    } else if (budget.monthlyBudget > 0 &&
-        monthSpent < budget.monthlyBudget * 0.5) {
+    } else if (spent < budget.monthlyBudget * 0.5) {
       mood = KikiMood.happy;
     } else {
       mood = KikiMood.neutral;
@@ -225,12 +240,13 @@ class DashboardHome extends StatelessWidget {
 
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.all(16),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
 
-            /// 📅 MONTH SELECTOR
+            /// 📅 MONTH
             MonthSelector(
               selectedMonth: selected,
               onChanged: budget.setSelectedMonthDate,
@@ -238,7 +254,7 @@ class DashboardHome extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            /// 🐱 KIKI MESSAGE
+            /// 🐱 KIKI (TOP PRIORITY)
             KikiMessageCard(
               mood: mood,
               message: insight.message,
@@ -252,45 +268,85 @@ class DashboardHome extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            /// 🏆 ACHIEVEMENTS
-            if (achievements.isNotEmpty)
-              AchievementsCard(
-                achievements: achievements,
+            /// ⚡ QUICK ACTIONS
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    quickAdd("☕", "Café"),
+                    quickAdd("🍔", "Comida"),
+                    quickAdd("🚕", "Transporte"),
+                    quickAdd("🛒", "Compras"),
+                  ],
+                ),
               ),
+            ),
 
-            if (achievements.isNotEmpty)
-              const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-            /// 🧠 FINANCIAL SCORE
-            if (hasMonthExpenses) ...[
-              KikiScoreCard(score: score),
+            /// 💰 CORE METRICS
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 140, // 👈 mismo alto para ambas
+                    child: KikiScoreCard(score: score),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: 140,
+                    child: MonthlyOverviewCard(
+                      budget: budget.monthlyBudget,
+                      spent: spent,
+                      currencySymbol: budget.currencySymbol,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            /// 🏆 ACHIEVEMENTS
+            if (achievements.isNotEmpty) ...[
+              AchievementsCard(achievements: achievements),
               const SizedBox(height: 16),
             ],
 
-            /// 📊 MONTH OVERVIEW
-            if (hasMonthExpenses)
-              MonthlyOverviewCard(
-                budget: budget.monthlyBudget,
-                spent: monthSpent,
-                currencySymbol: budget.currencySymbol,
+            /// 🔥 STREAK
+            if (streak >= 2) ...[
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      const Text("🔥", style: TextStyle(fontSize: 28)),
+                      const SizedBox(width: 12),
+                      Text("$streak días seguidos 🔥"),
+                    ],
+                  ),
+                ),
               ),
-
-            if (hasMonthExpenses)
               const SizedBox(height: 16),
+            ],
 
-            /// 🏷️ DOMINANT CATEGORY
-            if (hasMonthExpenses)
+            /// 🏷️ DOMINANT
+            if (hasExpenses) ...[
               DominantCategoryCard(
                 category: dominant,
                 amount: dominantAmount,
                 currencySymbol: budget.currencySymbol,
               ),
-
-            if (hasMonthExpenses)
               const SizedBox(height: 16),
+            ],
 
-            /// 💡 DAILY INSIGHT
-            if (hasMonthExpenses)
+            /// 💡 INSIGHT
+            if (hasExpenses) ...[
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -298,60 +354,26 @@ class DashboardHome extends StatelessWidget {
                     children: [
                       const Icon(Icons.lightbulb_outline),
                       const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          dailyInsight,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
+                      Expanded(child: Text(dailyInsight)),
                     ],
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+            ],
 
-            const SizedBox(height: 16),
-
-            if (streak >= 2)
-              Card(
-                child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    const Text(
-                      "🔥",
-                      style: TextStyle(fontSize: 28),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        "$streak días seguidos registrando gastos",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ]
-                ),
-              ),
-            ),
-
-            /// 🔒 PRO FEATURES
+            /// 🔒 PRO / CHARTS
             if (budget.isPro) ...[
               CategoryBarChartCard(
                 expenses: monthExpenses,
                 currencySymbol: budget.currencySymbol,
               ),
-
               const SizedBox(height: 16),
-
               const MonthlyTrendChartCard(months: 6),
             ] else
               const LockedProCard(
-                title: 'Análisis avanzado',
-                subtitle:
-                    'Desbloquea tendencias, categorías y coaching financiero.',
+                title: 'Desbloquea Kiki Pro',
+                subtitle: 'Gráficos, tendencias y coaching avanzado.',
               ),
 
             const SizedBox(height: 40),

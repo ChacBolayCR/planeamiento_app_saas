@@ -17,146 +17,172 @@ class UpgradeProScreen extends StatelessWidget {
         title: const Text('Kiki Pro'),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Card(
-                elevation: 0,
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 72,
-                        height: 72,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Icon(
-                          Icons.workspace_premium_rounded,
-                          size: 38,
-                          color: theme.colorScheme.primary,
+        child: Column(
+          children: [
+
+            /// 🔽 CONTENIDO SCROLLEABLE
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+
+                    /// 🧠 HEADER
+                    Card(
+                      elevation: 0,
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 72,
+                              height: 72,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primary.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Icon(
+                                Icons.workspace_premium_rounded,
+                                size: 38,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Kiki Pro ✨',
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Desbloquea análisis más avanzados y lleva tu control financiero a otro nivel.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.black54),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Kiki Pro ✨',
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w900,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    /// 💎 FEATURES
+                    const _ProFeatureTile(
+                      icon: Icons.all_inclusive_rounded,
+                      title: 'Gastos ilimitados',
+                      subtitle: 'Registra todos los movimientos que necesites.',
+                    ),
+                    const SizedBox(height: 10),
+
+                    const _ProFeatureTile(
+                      icon: Icons.bar_chart_rounded,
+                      title: 'Gráficos avanzados',
+                      subtitle: 'Visualiza tus categorías y tendencias del mes.',
+                    ),
+                    const SizedBox(height: 10),
+
+                    const _ProFeatureTile(
+                      icon: Icons.timeline_rounded,
+                      title: 'Tendencias mensuales',
+                      subtitle: 'Compara tu comportamiento financiero con más contexto.',
+                    ),
+                    const SizedBox(height: 10),
+
+                    const _ProFeatureTile(
+                      icon: Icons.auto_awesome_rounded,
+                      title: 'Insights inteligentes',
+                      subtitle: 'Recibe recomendaciones más útiles de Kiki.',
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    /// 🧪 TRIAL INFO
+                    if (budget.isTrialActive)
+                      Card(
+                        elevation: 0,
+                        color: theme.colorScheme.primary.withOpacity(0.08),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Text(
+                            'Tu prueba Pro está activa. Te quedan ${budget.trialDaysLeft} día(s).',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Desbloquea análisis más avanzados y lleva tu control financiero a otro nivel.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.black54),
-                      ),
-                    ],
-                  ),
+
+                    const SizedBox(height: 20),
+                  ],
                 ),
               ),
+            ),
 
-              const SizedBox(height: 16),
+            /// 🔻 FOOTER FIJO (BOTÓN)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        if (budget.isPro) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Pro ya está activo ✅'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                          return;
+                        }
 
-              const _ProFeatureTile(
-                icon: Icons.all_inclusive_rounded,
-                title: 'Gastos ilimitados',
-                subtitle: 'Registra todos los movimientos que necesites.',
-              ),
-              const SizedBox(height: 10),
-              const _ProFeatureTile(
-                icon: Icons.bar_chart_rounded,
-                title: 'Gráficos avanzados',
-                subtitle: 'Visualiza tus categorías y tendencias del mes.',
-              ),
-              const SizedBox(height: 10),
-              const _ProFeatureTile(
-                icon: Icons.timeline_rounded,
-                title: 'Tendencias mensuales',
-                subtitle: 'Compara tu comportamiento financiero con más contexto.',
-              ),
-              const SizedBox(height: 10),
-              const _ProFeatureTile(
-                icon: Icons.auto_awesome_rounded,
-                title: 'Insights inteligentes',
-                subtitle: 'Recibe recomendaciones más útiles de Kiki.',
-              ),
+                        if (kDebugMode) {
+                          await budget.startProTrial();
 
-              const Spacer(),
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Trial Pro activado por 7 días ✅'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                          Navigator.pop(context);
+                          return;
+                        }
 
-              if (budget.isTrialActive) ...[
-                Card(
-                  elevation: 0,
-                  color: theme.colorScheme.primary.withOpacity(0.08),
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Text(
-                      'Tu prueba Pro está activa. Te quedan ${budget.trialDaysLeft} día(s).',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Pronto podrás activar tu prueba Pro ✨'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                      child: Text(
+                        budget.isPro
+                            ? 'Pro activo'
+                            : 'Probar Pro por 7 días',
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-              ],
 
-              SizedBox(
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    if (budget.isPro) {
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Pro ya está activo ✅'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                      return;
-                    }
+                  const SizedBox(height: 10),
 
-                    if (kDebugMode) {
-                      await budget.startProTrial();
-
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Trial Pro activado por 7 días ✅'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                      Navigator.pop(context);
-                      return;
-                    }
-
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Pronto podrás activar tu prueba Pro ✨'),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
-                  child: Text(
-                    budget.isPro ? 'Pro activo' : 'Probar Pro por 7 días',
+                  const Text(
+                    'Luego podrás activar tu suscripción desde Google Play.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.black45),
                   ),
-                ),
+                ],
               ),
-
-              const SizedBox(height: 10),
-
-              const Text(
-                'Luego podrás activar tu suscripción desde Google Play.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.black45),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -197,6 +223,7 @@ class _ProFeatureTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
+
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
