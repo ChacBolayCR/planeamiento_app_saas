@@ -37,7 +37,10 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) {
             final provider = BudgetProvider();
-            provider.init(); // IMPORTANTE
+            provider.init();
+
+            provider.initPurchases();
+
             return provider;
           },
         ),

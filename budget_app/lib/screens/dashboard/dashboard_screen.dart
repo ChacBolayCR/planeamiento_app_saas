@@ -23,11 +23,151 @@ import '../expenses/add_expenses_modal.dart';
 import '../expenses/expenses_screen.dart';
 import '../profile/profile_screen.dart';
 
-class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+class DashboardHome extends StatefulWidget {
+  const DashboardHome({super.key});
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
+  State<DashboardHome> createState() => _DashboardHomeState();
+}
+
+class _DashboardHomeState extends State<DashboardHome> {
+  bool _checkedPaywall = false;
+
+  bool _isSameMonth(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final budget = context.watch<BudgetProvider>();
+
+    /// 🚨 PAYWALL AUTO
+    if (!_checkedPaywall) {
+      _checkedPaywall = true;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        PaywallHelper.showIfNeeded(
+          context,
+          budget.isFreeLimitReached,
+        );
+      });
+    }
+
+    final selected = budget.selectedMonthDate;
+    final now = DateTime.now();
+    final isCurrentMonth = _isSameMonth(selected, now);
+
+    final monthExpenses = budget.currentMonthExpenses;
+    final hasExpenses = monthExpenses.isNotEmpty;
+    final spent = budget.currentMonthTotalSpent;
+
+    final freeLimit = BudgetProvider.freeMonthlyExpenseLimit;
+
+    void openAddExpense() {
+      if (budget.isFreeLimitReached) {
+        PaywallHelper.showIfNeeded(context, true);
+        return;
+      }
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (_) => const AddExpenseModal(),
+      );
+    }
+
+    Widget quickAdd(String emoji, String category) {
+      return GestureDetector(
+        onTap: () {
+          if (budget.isFreeLimitReached) {
+            PaywallHelper.showIfNeeded(context, true);
+            return;
+          }
+
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            builder: (_) =>
+                AddExpenseModal(prefilledCategory: category),
+          );
+        },
+        child: Column(
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 26)),
+            const SizedBox(height: 4),
+            Text(category, style: const TextStyle(fontSize: 12)),
+          ],
+        ),
+      );
+    }
+
+    final variant = budget.paywallVariant;
+
+    final title = variant == 'A'
+        ? 'Desbloquea Kiki Pro'
+        : 'Te quedaste sin espacios 😅';
+
+    final subtitle = variant == 'A'
+        ? 'Gráficos, tendencias y coaching avanzado.'
+        : 'Pasate a Pro para seguir sin límites.';
+
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+
+            MonthSelector(
+              selectedMonth: selected,
+              onChanged: budget.setSelectedMonthDate,
+            ),
+
+            const SizedBox(height: 16),
+
+            Card(
+              child: ListTile(
+                title: Text("Gastaste ${monthExpenses.length}/$freeLimit"),
+                subtitle: const Text("Plan gratis"),
+                trailing: ElevatedButton(
+                  onPressed: () =>
+                      PaywallHelper.showIfNeeded(context, true),
+                  child: const Text("Upgrade"),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    quickAdd("☕", "Café"),
+                    quickAdd("🍔", "Comida"),
+                    quickAdd("🚕", "Transporte"),
+                    quickAdd("🛒", "Compras"),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            if (!budget.isPro)
+              LockedProCard(
+                title: title,
+                subtitle: subtitle,
+              ),
+
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
