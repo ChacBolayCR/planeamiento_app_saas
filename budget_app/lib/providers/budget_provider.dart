@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
 
 import '../models/expense.dart';
 
@@ -29,9 +28,6 @@ class BudgetProvider extends ChangeNotifier {
 
   SharedPreferences? _prefs;
 
-  /// ===== IN-APP PURCHASE =====
-  final InAppPurchase _iap = InAppPurchase.instance;
-
   /// ===== USER SETTINGS =====
   double _monthlyBudget = 0;
   double get monthlyBudget => _monthlyBudget;
@@ -41,18 +37,9 @@ class BudgetProvider extends ChangeNotifier {
 
   String get currencySymbol => _currencyCode == 'USD' ? '\$' : '₡';
 
-  /// ===== PRO STATE (NEW STRUCTURE) =====
-  bool _isProLocal = false;
-  bool _hasActiveSubscription = false;
-
-  bool get isPro => _isProLocal || _hasActiveSubscription;
-
-  /// ===== PRODUCTS =====
-  List<ProductDetails> _products = [];
-  List<ProductDetails> get products => _products;
-
-  bool _isStoreLoaded = false;
-  bool get isStoreLoaded => _isStoreLoaded;
+  /// ===== PRO =====
+  bool _isPro = false;
+  bool get isPro => _isPro;
 
   /// ===== MONTH =====
   String _selectedMonthKey =
@@ -94,10 +81,9 @@ class BudgetProvider extends ChangeNotifier {
     _selectedMonthKey = _prefs!.getString(_kSelectedMonth) ?? nowKey;
     _monthlyBudget = _prefs!.getDouble(_kBudget) ?? 0;
     _currencyCode = _prefs!.getString(_kCurrency) ?? 'CRC';
+    _isPro = _prefs!.getBool(_kIsPro) ?? false;
 
-    _isProLocal = _prefs!.getBool(_kIsPro) ?? false;
-
-    /// TRIAL CHECK
+    /// ===== TRIAL CHECK =====
     final trialStartString = _prefs!.getString(_kTrialStart);
 
     if (trialStartString != null) {
@@ -107,11 +93,11 @@ class BudgetProvider extends ChangeNotifier {
         final daysUsed = DateTime.now().difference(trialStart).inDays;
 
         if (daysUsed >= trialDays) {
-          _isProLocal = false;
+          _isPro = false;
           await _prefs!.remove(_kTrialStart);
           await _prefs!.setBool(_kIsPro, false);
         } else {
-          _isProLocal = true;
+          _isPro = true;
         }
       }
     }
@@ -124,68 +110,13 @@ class BudgetProvider extends ChangeNotifier {
 
     _checkNewMonthInternal();
 
-    /// 🔥 RESTORE (preparado)
-    await restorePurchases();
-
     notifyListeners();
   }
 
   /// ==========================
-  /// STORE
+  /// PRO / TRIAL
   /// ==========================
-  Future<void> loadProducts() async {
-    const ids = {'kiki_pro_monthly'};
 
-    final response = await _iap.queryProductDetails(ids);
-
-    _products = response.productDetails;
-    _isStoreLoaded = true;
-
-    notifyListeners();
-  }
-
-  Future<void> buyPro() async {
-    if (_products.isEmpty) return;
-
-    final product = _products.first;
-
-    final purchaseParam = PurchaseParam(productDetails: product);
-
-    await _iap.buyNonConsumable(purchaseParam: purchaseParam);
-  }
-
-  /// ==========================
-  /// PURCHASE LISTENER
-  /// ==========================
-  void initPurchases() {
-    _iap.purchaseStream.listen((purchases) {
-      for (final purchase in purchases) {
-        if (purchase.status == PurchaseStatus.purchased) {
-          activateProFromPurchase();
-        }
-
-        if (purchase.pendingCompletePurchase) {
-          _iap.completePurchase(purchase);
-        }
-      }
-    });
-  }
-
-  Future<void> activateProFromPurchase() async {
-    _hasActiveSubscription = true;
-    notifyListeners();
-  }
-
-  Future<void> restorePurchases() async {
-    /// 🔜 aquí luego conectamos Google Play
-    _hasActiveSubscription = false;
-
-    notifyListeners();
-  }
-
-  /// ==========================
-  /// TRIAL
-  /// ==========================
   bool get isTrialActive {
     final trialStartString = _prefs?.getString(_kTrialStart);
     if (trialStartString == null) return false;
@@ -208,6 +139,7 @@ class BudgetProvider extends ChangeNotifier {
     final daysUsed = DateTime.now().difference(trialStart).inDays;
 
     final left = trialDays - daysUsed;
+
     return left < 0 ? 0 : left;
   }
 
@@ -219,33 +151,44 @@ class BudgetProvider extends ChangeNotifier {
     await _prefs!.setString(_kTrialStart, now.toIso8601String());
     await _prefs!.setBool(_kIsPro, true);
 
-    _isProLocal = true;
+    _isPro = true;
 
     notifyListeners();
   }
 
-  void setIsPro(bool value) {
-    _isProLocal = value;
-    _prefs?.setBool(_kIsPro, value);
+  Future<void> setIsPro(bool value) async {
+    _prefs ??= await SharedPreferences.getInstance();
+
+    _isPro = value;
+
+    await _prefs!.setBool(_kIsPro, value);
+
     notifyListeners();
+  }
+
+  /// 🔥 Para pruebas en web
+  Future<void> unlockProForTesting() async {
+    await setIsPro(true);
   }
 
   /// ==========================
   /// FREE LIMIT
   /// ==========================
+
   bool get isFreeLimitReached {
-    if (isPro) return false;
+    if (_isPro) return false;
     return currentMonthExpenses.length >= freeMonthlyExpenseLimit;
   }
 
   /// ==========================
   /// MONTH
   /// ==========================
-  void setSelectedMonth(String mk) {
+
+  Future<void> setSelectedMonth(String mk) async {
     _selectedMonthKey = mk;
     _prefs?.setString(_kSelectedMonth, mk);
 
-    _loadMonthIfNeeded(mk);
+    await _loadMonthIfNeeded(mk);
 
     notifyListeners();
   }
@@ -257,6 +200,7 @@ class BudgetProvider extends ChangeNotifier {
   /// ==========================
   /// SETTINGS
   /// ==========================
+
   void setMonthlyBudget(double value) {
     _monthlyBudget = value;
     _prefs?.setDouble(_kBudget, value);
@@ -272,16 +216,37 @@ class BudgetProvider extends ChangeNotifier {
   /// ==========================
   /// EXPENSES
   /// ==========================
+
   List<Expense> get currentMonthExpenses =>
       List.unmodifiable(_expensesByMonth[_selectedMonthKey] ?? const []);
 
   List<Expense> get expenses => currentMonthExpenses;
 
+  List<Expense> get allExpenses {
+    return _expensesByMonth.values
+        .expand((month) => month)
+        .toList();
+  }
+
   double get currentMonthTotalSpent =>
       currentMonthExpenses.fold(0.0, (sum, e) => sum + e.amount);
 
+  String get currentMonthDominantCategory {
+    final totals = <String, double>{};
+
+    for (final e in currentMonthExpenses) {
+      totals[e.category] = (totals[e.category] ?? 0) + e.amount;
+    }
+
+    if (totals.isEmpty) return '';
+
+    return totals.entries
+        .reduce((a, b) => a.value > b.value ? a : b)
+        .key;
+  }
+
   void addExpense(Expense expense) {
-    if (!isPro && isFreeLimitReached) return;
+    if (!_isPro && isFreeLimitReached) return;
 
     final list = _expensesByMonth.putIfAbsent(
       _selectedMonthKey,
@@ -307,8 +272,99 @@ class BudgetProvider extends ChangeNotifier {
   }
 
   /// ==========================
+  /// CALCULATIONS
+  /// ==========================
+
+  double totalByCategory(String category) {
+    return currentMonthExpenses
+        .where((e) => e.category == category)
+        .fold(0.0, (sum, e) => sum + e.amount);
+  }
+
+  double categoryPercent(String category) {
+    if (_monthlyBudget <= 0) return 0;
+
+    final total = totalByCategory(category);
+
+    return (total / _monthlyBudget).clamp(0.0, 1.0);
+  }
+
+  double totalSpentForMonth(DateTime month) {
+    final mk = monthKey(DateTime(month.year, month.month, 1));
+
+    if (!_expensesByMonth.containsKey(mk)) {
+      _loadMonthIfNeeded(mk);
+    }
+
+    final list = _expensesByMonth[mk] ?? const <Expense>[];
+
+    return list.fold<double>(0.0, (sum, e) => sum + e.amount);
+  }
+
+  /// ==========================
+  /// NEW MONTH
+  /// ==========================
+
+  void checkNewMonth() {
+    _checkNewMonthInternal();
+    notifyListeners();
+  }
+
+  void dismissNewMonthMessage() {
+    final nowKey = monthKey(DateTime.now());
+
+    _prefs?.setString(_kDismissedMonth, nowKey);
+
+    _isNewMonth = false;
+
+    notifyListeners();
+  }
+
+  void _checkNewMonthInternal() {
+    final nowKey = monthKey(DateTime.now());
+
+    final lastSeen = _prefs?.getString(_kLastSeenMonth);
+    final dismissedFor = _prefs?.getString(_kDismissedMonth);
+
+    final changed = (lastSeen != null && lastSeen != nowKey);
+    final alreadyDismissed = dismissedFor == nowKey;
+
+    _isNewMonth = changed && !alreadyDismissed;
+
+    _prefs?.setString(_kLastSeenMonth, nowKey);
+  }
+
+  // ==========================
+// 🛒 PURCHASES (WEB MOCK)
+// ==========================
+
+Future<void> initPurchases() async {
+  /// En web no hacemos nada todavía
+  /// Luego aquí conectamos in_app_purchase
+}
+
+Future<void> buyPro() async {
+  /// Simula compra exitosa
+  await startProTrial(); // 👈 usa el trial como compra temporal
+
+  // Si quieres que sea permanente en vez de trial:
+  // await setIsPro(true);
+}
+
+Future<void> restorePurchases() async {
+  _prefs ??= await SharedPreferences.getInstance();
+
+  final isProSaved = _prefs!.getBool(_kIsPro) ?? false;
+
+  _isPro = isProSaved;
+
+  notifyListeners();
+}
+
+  /// ==========================
   /// PERSISTENCE
   /// ==========================
+
   Future<void> _loadMonthIfNeeded(String mk) async {
     if (_expensesByMonth.containsKey(mk)) return;
     await _loadMonth(mk);

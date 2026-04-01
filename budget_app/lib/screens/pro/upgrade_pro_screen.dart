@@ -3,152 +3,157 @@ import 'package:provider/provider.dart';
 
 import '../../providers/budget_provider.dart';
 
-class UpgradeProScreen extends StatelessWidget {
+class UpgradeProScreen extends StatefulWidget {
   const UpgradeProScreen({super.key});
+
+  @override
+  State<UpgradeProScreen> createState() => _UpgradeProScreenState();
+}
+
+class _UpgradeProScreenState extends State<UpgradeProScreen> {
+  bool _loading = false;
+  bool _restoring = false;
 
   @override
   Widget build(BuildContext context) {
     final budget = context.watch<BudgetProvider>();
+    final theme = Theme.of(context);
 
-    final used = budget.currentMonthExpenses.length;
-    final limit = BudgetProvider.freeMonthlyExpenseLimit;
-    final progress = (used / limit).clamp(0.0, 1.0);
-
-    return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Kiki Pro'),
+      ),
+      body: SafeArea(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
 
-            /// HANDLE
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
+            /// 🔽 CONTENIDO
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
 
-            /// 🚨 HEADLINE
-            const Text(
-              "Te quedaste sin espacio 😅",
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+                    /// 🧠 HEADER
+                    _Header(theme: theme),
 
-            const SizedBox(height: 8),
+                    const SizedBox(height: 16),
 
-            Text(
-              "Usaste $used de $limit gastos este mes",
-              style: const TextStyle(color: Colors.grey),
-            ),
+                    /// 💎 FEATURES
+                    const _ProFeatureTile(
+                      icon: Icons.all_inclusive_rounded,
+                      title: 'Gastos ilimitados',
+                      subtitle: 'Registra sin límites y sin fricción.',
+                    ),
+                    const SizedBox(height: 10),
 
-            const SizedBox(height: 16),
+                    const _ProFeatureTile(
+                      icon: Icons.bar_chart_rounded,
+                      title: 'Gráficos avanzados',
+                      subtitle: 'Visualiza patrones y categorías.',
+                    ),
+                    const SizedBox(height: 10),
 
-            /// 📊 PROGRESS BAR (clave psicológica)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 10,
-                backgroundColor: Colors.grey.shade200,
-                color: Colors.redAccent,
-              ),
-            ),
+                    const _ProFeatureTile(
+                      icon: Icons.timeline_rounded,
+                      title: 'Tendencias mensuales',
+                      subtitle: 'Entiende cómo evolucionas.',
+                    ),
+                    const SizedBox(height: 10),
 
-            const SizedBox(height: 20),
+                    const _ProFeatureTile(
+                      icon: Icons.auto_awesome_rounded,
+                      title: 'Insights inteligentes',
+                      subtitle: 'Recomendaciones automáticas.',
+                    ),
 
-            /// 💡 MENSAJE DE PÉRDIDA
-            const Text(
-              "Si no activás Pro, no vas a poder seguir registrando gastos 😬",
-              textAlign: TextAlign.center,
-            ),
+                    const SizedBox(height: 20),
 
-            const SizedBox(height: 20),
+                    /// 🧪 TRIAL INFO
+                    if (budget.isTrialActive)
+                      _TrialBanner(daysLeft: budget.trialDaysLeft),
 
-            /// 💎 BENEFICIOS
-            _feature("Gastos ilimitados"),
-            _feature("Control total mensual"),
-            _feature("Insights automáticos"),
-            _feature("Gráficos avanzados"),
-
-            const SizedBox(height: 20),
-
-            /// 🎁 TRIAL
-            if (!budget.isTrialActive && !budget.isPro)
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  "🎁 Probá 7 días GRATIS",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                    const SizedBox(height: 20),
+                  ],
                 ),
               ),
-
-            const SizedBox(height: 20),
-
-            /// 💰 PRECIO
-            const Text(
-              "₡2,500 / mes",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
             ),
 
-            const Text(
-              "Menos que un café ☕",
-              style: TextStyle(color: Colors.grey),
-            ),
+            /// 🔻 FOOTER
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
 
-            const SizedBox(height: 20),
+                  /// 🚀 BOTÓN PRINCIPAL
+                  SizedBox(
+  width: double.infinity,
+  height: 54,
+  child: ElevatedButton(
+    onPressed: (_loading || budget.isPro)
+        ? null
+        : () async {
+            setState(() => _loading = true);
 
-            /// 🔥 CTA
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () async {
-                  if (!budget.isTrialActive && !budget.isPro) {
-                    await budget.startProTrial();
-                  } else {
-                    await budget.buyPro();
-                  }
+            await budget.buyPro();
 
-                  if (context.mounted) Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+            setState(() => _loading = false);
+
+            if (!mounted) return;
+
+            _showSnack('🎉 Pro activado');
+
+            Navigator.pop(context);
+          },
+    child: _loading
+        ? const SizedBox(
+            height: 20,
+            width: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : Text(
+            budget.isPro
+                ? 'Ya eres Pro ✅'
+                : 'Probar 7 días gratis',
+          ),
+  ),
+),
+
+                  const SizedBox(height: 12),
+
+                  /// 🔄 RESTORE
+                  TextButton(
+                    onPressed: _restoring
+                        ? null
+                        : () async {
+                            setState(() => _restoring = true);
+
+                            await budget.restorePurchases();
+
+                            setState(() => _restoring = false);
+
+                            _showSnack('Compras restauradas');
+                          },
+                    child: _restoring
+                        ? const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Restaurar compras'),
                   ),
-                ),
-                child: Text(
-                  _getText(budget),
-                  style: const TextStyle(fontSize: 16),
-                ),
+
+                  const SizedBox(height: 6),
+
+                  /// 🧾 DISCLAIMER
+                  const Text(
+                    'Suscripción mensual. Cancela en cualquier momento.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.black45, fontSize: 12),
+                  ),
+                ],
               ),
-            ),
-
-            const SizedBox(height: 10),
-
-            /// RESTORE
-            TextButton(
-              onPressed: () async {
-                await budget.restorePurchases();
-              },
-              child: const Text("Restaurar compra"),
             ),
           ],
         ),
@@ -156,22 +161,144 @@ class UpgradeProScreen extends StatelessWidget {
     );
   }
 
-  static Widget _feature(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          const Icon(Icons.check_circle, color: Colors.indigo),
-          const SizedBox(width: 10),
-          Expanded(child: Text(text)),
-        ],
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
+}
 
-  static String _getText(BudgetProvider budget) {
-    if (budget.isPro) return "Ya sos Pro 🎉";
-    if (budget.isTrialActive) return "Seguir con Pro";
-    return "Activar prueba gratis";
+class _Header extends StatelessWidget {
+  final ThemeData theme;
+
+  const _Header({required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(
+                Icons.workspace_premium_rounded,
+                size: 38,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Kiki Pro ✨',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Controla tu dinero como nunca antes.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.black54),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TrialBanner extends StatelessWidget {
+  final int daysLeft;
+
+  const _TrialBanner({required this.daysLeft});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.primary.withOpacity(0.08),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Text(
+          'Te quedan $daysLeft día(s) de Pro gratis',
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProFeatureTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _ProFeatureTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      elevation: 0,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                icon,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: 12),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(color: Colors.black54),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

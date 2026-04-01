@@ -23,151 +23,11 @@ import '../expenses/add_expenses_modal.dart';
 import '../expenses/expenses_screen.dart';
 import '../profile/profile_screen.dart';
 
-class DashboardHome extends StatefulWidget {
-  const DashboardHome({super.key});
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
 
   @override
-  State<DashboardHome> createState() => _DashboardHomeState();
-}
-
-class _DashboardHomeState extends State<DashboardHome> {
-  bool _checkedPaywall = false;
-
-  bool _isSameMonth(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final budget = context.watch<BudgetProvider>();
-
-    /// 🚨 PAYWALL AUTO
-    if (!_checkedPaywall) {
-      _checkedPaywall = true;
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        PaywallHelper.showIfNeeded(
-          context,
-          budget.isFreeLimitReached,
-        );
-      });
-    }
-
-    final selected = budget.selectedMonthDate;
-    final now = DateTime.now();
-    final isCurrentMonth = _isSameMonth(selected, now);
-
-    final monthExpenses = budget.currentMonthExpenses;
-    final hasExpenses = monthExpenses.isNotEmpty;
-    final spent = budget.currentMonthTotalSpent;
-
-    final freeLimit = BudgetProvider.freeMonthlyExpenseLimit;
-
-    void openAddExpense() {
-      if (budget.isFreeLimitReached) {
-        PaywallHelper.showIfNeeded(context, true);
-        return;
-      }
-
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        useSafeArea: true,
-        builder: (_) => const AddExpenseModal(),
-      );
-    }
-
-    Widget quickAdd(String emoji, String category) {
-      return GestureDetector(
-        onTap: () {
-          if (budget.isFreeLimitReached) {
-            PaywallHelper.showIfNeeded(context, true);
-            return;
-          }
-
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            builder: (_) =>
-                AddExpenseModal(prefilledCategory: category),
-          );
-        },
-        child: Column(
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 26)),
-            const SizedBox(height: 4),
-            Text(category, style: const TextStyle(fontSize: 12)),
-          ],
-        ),
-      );
-    }
-
-    final variant = budget.paywallVariant;
-
-    final title = variant == 'A'
-        ? 'Desbloquea Kiki Pro'
-        : 'Te quedaste sin espacios 😅';
-
-    final subtitle = variant == 'A'
-        ? 'Gráficos, tendencias y coaching avanzado.'
-        : 'Pasate a Pro para seguir sin límites.';
-
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-
-            MonthSelector(
-              selectedMonth: selected,
-              onChanged: budget.setSelectedMonthDate,
-            ),
-
-            const SizedBox(height: 16),
-
-            Card(
-              child: ListTile(
-                title: Text("Gastaste ${monthExpenses.length}/$freeLimit"),
-                subtitle: const Text("Plan gratis"),
-                trailing: ElevatedButton(
-                  onPressed: () =>
-                      PaywallHelper.showIfNeeded(context, true),
-                  child: const Text("Upgrade"),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    quickAdd("☕", "Café"),
-                    quickAdd("🍔", "Comida"),
-                    quickAdd("🚕", "Transporte"),
-                    quickAdd("🛒", "Compras"),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            if (!budget.isPro)
-              LockedProCard(
-                title: title,
-                subtitle: subtitle,
-              ),
-
-            const SizedBox(height: 40),
-          ],
-        ),
-      ),
-    );
-  }
+  State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
@@ -268,11 +128,25 @@ class _DashAppBar extends StatelessWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
-class DashboardHome extends StatelessWidget {
+class DashboardHome extends StatefulWidget {
   const DashboardHome({super.key});
+
+  @override
+  State<DashboardHome> createState() => _DashboardHomeState();
+}
+
+class _DashboardHomeState extends State<DashboardHome> {
 
   bool _isSameMonth(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    /// 🔥 Esto fuerza rebuild cuando cambia isPro
+    context.watch<BudgetProvider>().isPro;
   }
 
   @override
@@ -382,11 +256,9 @@ class DashboardHome extends StatelessWidget {
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
 
-            /// 📅 MONTH
             MonthSelector(
               selectedMonth: selected,
               onChanged: budget.setSelectedMonthDate,
@@ -394,7 +266,6 @@ class DashboardHome extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            /// 🐱 KIKI (TOP PRIORITY)
             KikiMessageCard(
               mood: mood,
               message: insight.message,
@@ -408,12 +279,10 @@ class DashboardHome extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            /// ⚡ QUICK ACTIONS
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     quickAdd("☕", "Café"),
@@ -427,12 +296,11 @@ class DashboardHome extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            /// 💰 CORE METRICS
             Row(
               children: [
                 Expanded(
                   child: SizedBox(
-                    height: 140, // 👈 mismo alto para ambas
+                    height: 140,
                     child: KikiScoreCard(score: score),
                   ),
                 ),
@@ -452,13 +320,11 @@ class DashboardHome extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            /// 🏆 ACHIEVEMENTS
             if (achievements.isNotEmpty) ...[
               AchievementsCard(achievements: achievements),
               const SizedBox(height: 16),
             ],
 
-            /// 🔥 STREAK
             if (streak >= 2) ...[
               Card(
                 child: Padding(
@@ -475,7 +341,6 @@ class DashboardHome extends StatelessWidget {
               const SizedBox(height: 16),
             ],
 
-            /// 🏷️ DOMINANT
             if (hasExpenses) ...[
               DominantCategoryCard(
                 category: dominant,
@@ -485,7 +350,6 @@ class DashboardHome extends StatelessWidget {
               const SizedBox(height: 16),
             ],
 
-            /// 💡 INSIGHT
             if (hasExpenses) ...[
               Card(
                 child: Padding(
@@ -502,19 +366,27 @@ class DashboardHome extends StatelessWidget {
               const SizedBox(height: 16),
             ],
 
-            /// 🔒 PRO / CHARTS
-            if (budget.isPro) ...[
-              CategoryBarChartCard(
-                expenses: monthExpenses,
-                currencySymbol: budget.currencySymbol,
-              ),
-              const SizedBox(height: 16),
-              const MonthlyTrendChartCard(months: 6),
-            ] else
-              const LockedProCard(
-                title: 'Desbloquea Kiki Pro',
-                subtitle: 'Gráficos, tendencias y coaching avanzado.',
-              ),
+            /// 🔥 PRO FIX
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: budget.isPro
+                  ? Column(
+                      key: const ValueKey("pro"),
+                      children: [
+                        CategoryBarChartCard(
+                          expenses: monthExpenses,
+                          currencySymbol: budget.currencySymbol,
+                        ),
+                        const SizedBox(height: 16),
+                        const MonthlyTrendChartCard(months: 6),
+                      ],
+                    )
+                  : const LockedProCard(
+                      key: ValueKey("free"),
+                      title: 'Desbloquea Kiki Pro',
+                      subtitle: 'Gráficos, tendencias y coaching avanzado.',
+                    ),
+            ),
 
             const SizedBox(height: 40),
           ],
