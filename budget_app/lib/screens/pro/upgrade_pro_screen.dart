@@ -114,7 +114,7 @@ class _UpgradeProScreenState extends State<UpgradeProScreen> {
           )
         : Text(
             budget.isPro
-                ? 'Ya eres Pro ✅'
+                ? 'Has debloqueado Kiki Pro ✅'
                 : 'Probar 7 días gratis',
           ),
   ),
