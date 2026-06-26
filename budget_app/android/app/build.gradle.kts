@@ -14,6 +14,12 @@ android {
     ndkVersion = "27.0.12077973"
 
 
+    packaging {
+        jniLibs {
+         keepDebugSymbols += listOf("**/*.so")
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -21,6 +27,7 @@ android {
 
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_17.toString()
+        
     }
 
     defaultConfig {

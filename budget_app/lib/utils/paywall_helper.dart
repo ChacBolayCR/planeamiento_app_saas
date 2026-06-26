@@ -12,11 +12,11 @@ class PaywallHelper {
 
     final budget = context.read<BudgetProvider>();
 
-    if (budget.paywallVariant == 'A') {
+    /*if (budget.paywallVariant == 'A') {
       _showFullPaywall(context);
     } else {
       _showSoftPaywall(context);
-    }
+    }*/
   }
 
   static void _showFullPaywall(BuildContext context) {
