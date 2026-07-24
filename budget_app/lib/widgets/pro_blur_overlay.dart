@@ -37,8 +37,8 @@ class ProBlurOverlay extends StatelessWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.white.withOpacity(0.10),
-                        Colors.white.withOpacity(0.85),
+                        Colors.white.withValues(alpha: 0.10),
+                        Colors.white.withValues(alpha: 0.85),
                       ],
                     ),
                   ),

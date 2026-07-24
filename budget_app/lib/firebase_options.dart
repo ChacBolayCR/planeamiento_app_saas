@@ -85,5 +85,4 @@ class DefaultFirebaseOptions {
     projectId: 'kiki-budget',
     storageBucket: 'kiki-budget.firebasestorage.app',
   );
-
 }

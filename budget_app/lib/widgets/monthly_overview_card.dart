@@ -15,71 +15,68 @@ class MonthlyOverviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final remaining = budget - spent;
+    final percentUsed = budget <= 0 ? 0.0 : (spent / budget).clamp(0.0, 1.0);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    final double percentUsed =
-        budget <= 0 ? 0.0 : (spent / budget).clamp(0.0, 1.0);
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final textScale = MediaQuery.textScalerOf(context).scale(1);
+            final stackStats = constraints.maxWidth < 300 || textScale > 1.15;
+            final spentStat = _MiniStat(
+              label: 'Gastado',
+              value: '$currencySymbol${spent.toStringAsFixed(0)}',
+              valueColor: colorScheme.onSurface,
+            );
+            final remainingStat = _MiniStat(
+              label: 'Restante',
+              value: '$currencySymbol${remaining.toStringAsFixed(0)}',
+              valueColor: remaining >= 0 ? Colors.green : Colors.red,
+            );
 
-    return SizedBox(
-      height: 130, // 👈 un poco más compacto
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(14), // 👈 menos padding
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Resumen del mes',
-                style: TextStyle(color: Colors.black54),
-              ),
-
-              const SizedBox(height: 8),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: _MiniStat(
-                      label: 'Gastado',
-                      value:
-                          '$currencySymbol${spent.toStringAsFixed(0)}',
-                      valueStyle: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.black87,
-                      ),
-                    ),
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Resumen del mes',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _MiniStat(
-                      label: 'Restante',
-                      value:
-                          '$currencySymbol${remaining.toStringAsFixed(0)}',
-                      valueStyle: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color:
-                            remaining >= 0 ? Colors.green : Colors.red,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 10),
-
-              ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: LinearProgressIndicator(
-                  value: percentUsed,
-                  minHeight: 6,
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(height: 12),
+                if (stackStats) ...[
+                  spentStat,
+                  const SizedBox(height: 10),
+                  remainingStat,
+                ] else
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: spentStat),
+                      const SizedBox(width: 12),
+                      Expanded(child: remainingStat),
+                    ],
+                  ),
+                const SizedBox(height: 14),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    value: percentUsed,
+                    minHeight: 6,
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -89,29 +86,38 @@ class MonthlyOverviewCard extends StatelessWidget {
 class _MiniStat extends StatelessWidget {
   final String label;
   final String value;
-  final TextStyle valueStyle;
+  final Color valueColor;
 
   const _MiniStat({
     required this.label,
     required this.value,
-    required this.valueStyle,
+    required this.valueColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(color: Colors.black54),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 4),
         Text(
           value,
-          style: valueStyle,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis, // 👈 anti overflow extra
+          softWrap: true,
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: valueColor,
+            fontWeight: FontWeight.w900,
+          ),
         ),
       ],
     );

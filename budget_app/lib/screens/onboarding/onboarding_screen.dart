@@ -11,7 +11,6 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-
   final PageController _controller = PageController();
   int _page = 0;
 
@@ -38,7 +37,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-
           /// Kiki
           AnimatedScale(
             duration: const Duration(milliseconds: 300),
@@ -60,13 +58,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               boxShadow: [
                 BoxShadow(
                   blurRadius: 10,
-                  color: Colors.black.withOpacity(.05),
+                  color: Colors.black.withValues(alpha: .05),
                 )
               ],
             ),
             child: Column(
               children: [
-
                 Text(
                   message,
                   textAlign: TextAlign.center,
@@ -75,9 +72,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 10),
-
                 Text(
                   subtitle,
                   textAlign: TextAlign.center,
@@ -96,44 +91,39 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
-
       body: PageView(
         controller: _controller,
         onPageChanged: (i) => setState(() => _page = i),
         children: [
-
           _kikiPage(
             message: "Hola, soy Kiki 🐾",
             subtitle: "Te ayudaré a controlar tus gastos\nsin hojas de Excel.",
           ),
-
           _kikiPage(
             message: "Descubre en qué gastas",
-            subtitle: "Kiki analiza tus gastos y te muestra\ncómo mejorar tus finanzas.",
+            subtitle:
+                "Kiki analiza tus gastos y te muestra\ncómo mejorar tus finanzas.",
           ),
-
           _kikiPage(
             message: "Kiki también puede ayudarte más 🧠",
-            subtitle: "Con Kiki Pro podrás ver patrones de gasto, metas y análisis más profundos.",
+            subtitle:
+                "Con Kiki Pro podrás ver patrones de gasto, metas y análisis más profundos.",
           ),
-
           _kikiPage(
             message: "Empieza hoy mismo",
-            subtitle: "Registra tus gastos en segundos\ny deja que Kiki haga el resto.",
+            subtitle:
+                "Registra tus gastos en segundos\ny deja que Kiki haga el resto.",
           ),
         ],
       ),
-
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-
               /// dots
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -144,9 +134,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     width: _page == index ? 12 : 8,
                     height: _page == index ? 12 : 8,
                     decoration: BoxDecoration(
-                      color: _page == index
-                          ? Colors.blue
-                          : Colors.grey.shade400,
+                      color:
+                          _page == index ? Colors.blue : Colors.grey.shade400,
                       shape: BoxShape.circle,
                     ),
                   ),

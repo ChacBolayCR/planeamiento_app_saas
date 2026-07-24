@@ -22,7 +22,6 @@ enum KikiInsightAction {
 }
 
 class KikiInsightsService {
-
   static KikiInsightResult buildInsight({
     required bool isNewMonth,
     required bool isPro,
@@ -38,13 +37,12 @@ class KikiInsightsService {
     required double lastMonthSpent,
     required DateTime selectedMonth,
   }) {
-
-    final percentUsed =
-        monthlyBudget <= 0 ? 0.0 : (totalSpent / monthlyBudget);
+    final percentUsed = monthlyBudget <= 0 ? 0.0 : (totalSpent / monthlyBudget);
 
     if (isNewMonth) {
       return const KikiInsightResult(
-        message: 'Nuevo mes 🗓️ ¿Definimos presupuesto y arrancamos con buen pie?',
+        message:
+            'Nuevo mes 🗓️ ¿Definimos presupuesto y arrancamos con buen pie?',
         actionLabel: 'Agregar gasto',
         action: KikiInsightAction.addExpense,
       );
@@ -52,8 +50,7 @@ class KikiInsightsService {
 
     if (!isPro && expenseCount >= freeLimit) {
       return KikiInsightResult(
-        message:
-            'Llegaste al límite Free de $freeLimit gastos este mes.',
+        message: 'Llegaste al límite Free de $freeLimit gastos este mes.',
         actionLabel: 'Activar Pro',
         action: KikiInsightAction.upgradePro,
       );
@@ -62,8 +59,7 @@ class KikiInsightsService {
     if (!hasExpenses) {
       if (isCurrentMonth) {
         return const KikiInsightResult(
-          message:
-              'Este mes está vacío 🐾 Agrega tu primer gasto.',
+          message: 'Este mes está vacío 🐾 Agrega tu primer gasto.',
           actionLabel: 'Agregar gasto',
           action: KikiInsightAction.addExpense,
         );
@@ -107,8 +103,7 @@ class KikiInsightsService {
 
     if (streak >= 3) {
       return KikiInsightResult(
-        message:
-            '🔥 Llevas $streak días seguidos registrando gastos.',
+        message: '🔥 Llevas $streak días seguidos registrando gastos.',
       );
     }
 
@@ -117,8 +112,7 @@ class KikiInsightsService {
 
     if (recent > previous * 1.35 && previous > 0) {
       return const KikiInsightResult(
-        message:
-            'Tu ritmo de gasto aumentó bastante en los últimos días 📈',
+        message: 'Tu ritmo de gasto aumentó bastante en los últimos días 📈',
         actionLabel: 'Revisar gastos',
         action: KikiInsightAction.viewExpenses,
       );
@@ -189,15 +183,12 @@ class KikiInsightsService {
     return streak;
   }
 
-  static double projectedMonthlySpend(
-      List<Expense> expenses, DateTime month) {
+  static double projectedMonthlySpend(List<Expense> expenses, DateTime month) {
     if (expenses.isEmpty) return 0;
 
-    final total =
-        expenses.fold<double>(0, (sum, e) => sum + e.amount);
+    final total = expenses.fold<double>(0, (sum, e) => sum + e.amount);
 
-    final daysInMonth =
-        DateTime(month.year, month.month + 1, 0).day;
+    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
 
     final daysPassed = DateTime.now().day;
 
@@ -260,12 +251,12 @@ class KikiInsightsService {
     final today = DateTime.now();
 
     final todayExpenses = expenses.where((e) =>
-      e.date.year == today.year &&
-      e.date.month == today.month &&
-      e.date.day == today.day);
+        e.date.year == today.year &&
+        e.date.month == today.month &&
+        e.date.day == today.day);
 
     final totalToday =
-      todayExpenses.fold<double>(0.0, (sum, e) => sum + e.amount);
+        todayExpenses.fold<double>(0.0, (sum, e) => sum + e.amount);
 
     if (totalToday == 0) {
       return 'Hoy no registraste gastos 🐾 buen control.';
@@ -281,6 +272,4 @@ class KikiInsightsService {
 
     return 'Hoy ya llevas ${totalToday.toStringAsFixed(0)}. Tal vez conviene frenar un poco 👀';
   }
-
 }
-

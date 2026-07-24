@@ -1,14 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CloudSyncService {
-
   final _db = FirebaseFirestore.instance;
 
   Future<void> saveExpenses(
     String userId,
     Map<String, dynamic> data,
   ) async {
-
     await _db
         .collection('users')
         .doc(userId)
@@ -21,7 +19,6 @@ class CloudSyncService {
     String userId,
     String month,
   ) async {
-
     final doc = await _db
         .collection('users')
         .doc(userId)

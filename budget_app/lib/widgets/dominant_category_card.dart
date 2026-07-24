@@ -28,7 +28,7 @@ class DominantCategoryCard extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: t.colorScheme.primary.withOpacity(0.10),
+                color: t.colorScheme.primary.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(

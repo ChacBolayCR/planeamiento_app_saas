@@ -78,7 +78,8 @@ class _KikiAssistantState extends State<KikiAssistant> {
   void didUpdateWidget(covariant KikiAssistant oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    final changed = oldWidget.message != widget.message || oldWidget.mood != widget.mood;
+    final changed =
+        oldWidget.message != widget.message || oldWidget.mood != widget.mood;
     if (changed) {
       _cancelTimer();
       if (mounted) {
@@ -128,7 +129,6 @@ class _KikiAssistantState extends State<KikiAssistant> {
       case KikiMood.overbudget:
         return 'assets/images/kiki/kiki_overbudget.png';
       case KikiMood.neutral:
-      default:
         return 'assets/images/kiki/kiki_neutral.png';
     }
   }
@@ -142,8 +142,7 @@ class _KikiAssistantState extends State<KikiAssistant> {
       case KikiMood.overbudget:
         return const Color(0xFFE36A6A);
       case KikiMood.neutral:
-      default:
-        return Theme.of(context).colorScheme.primary.withOpacity(0.28);
+        return Theme.of(context).colorScheme.primary.withValues(alpha: 0.28);
     }
   }
 
@@ -172,7 +171,8 @@ class _KikiAssistantState extends State<KikiAssistant> {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 220),
                     curve: Curves.easeOut,
-                    transform: Matrix4.translationValues(0, _showBubble ? 0 : 8, 0),
+                    transform:
+                        Matrix4.translationValues(0, _showBubble ? 0 : 8, 0),
                     child: _SpeechBubble(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
@@ -184,10 +184,12 @@ class _KikiAssistantState extends State<KikiAssistant> {
                             compact: false,
                             showAvatar: false,
                           ),
-                          if (widget.actionLabel != null && widget.onAction != null) ...[
+                          if (widget.actionLabel != null &&
+                              widget.onAction != null) ...[
                             const SizedBox(height: 8),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
                               child: SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
@@ -199,7 +201,8 @@ class _KikiAssistantState extends State<KikiAssistant> {
                           ],
                           if (widget.onDismiss != null) ...[
                             Padding(
-                              padding: const EdgeInsets.only(left: 8, right: 8, bottom: 6),
+                              padding: const EdgeInsets.only(
+                                  left: 8, right: 8, bottom: 6),
                               child: TextButton(
                                 onPressed: widget.onDismiss,
                                 child: const Text('Entendido'),
@@ -233,22 +236,21 @@ class _KikiAssistantState extends State<KikiAssistant> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.10),
+                    color: Colors.black.withValues(alpha: 0.10),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
                   BoxShadow(
-                    color: ringColor.withOpacity(0.18),
+                    color: ringColor.withValues(alpha: 0.18),
                     blurRadius: 20,
                     offset: const Offset(0, 0),
                   ),
                 ],
               ),
-              child: ClipOval(
-                child: Image.asset(
-                  _kikiAssetForMood(widget.mood),
-                  fit: BoxFit.contain,
-                ),
+              child: Image.asset(
+                _kikiAssetForMood(widget.mood),
+                fit: BoxFit.contain,
+                alignment: Alignment.center,
               ),
             ),
           ),
@@ -270,11 +272,11 @@ class _SpeechBubble extends StatelessWidget {
       children: [
         Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.98),
+            color: Colors.white.withValues(alpha: 0.98),
             borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.10),
+                color: Colors.black.withValues(alpha: 0.10),
                 blurRadius: 24,
                 offset: const Offset(0, 12),
               ),
@@ -291,7 +293,7 @@ class _SpeechBubble extends StatelessWidget {
               width: 16,
               height: 16,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.98),
+                color: Colors.white.withValues(alpha: 0.98),
                 borderRadius: BorderRadius.circular(4),
               ),
             ),

@@ -16,7 +16,8 @@ class ExpensesScreen extends StatelessWidget {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Límite Free alcanzado'),
-        content: Text('En la versión gratuita puedes registrar hasta $limit gastos por mes.'),
+        content: Text(
+            'En la versión gratuita puedes registrar hasta $limit gastos por mes.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -29,7 +30,7 @@ class ExpensesScreen extends StatelessWidget {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Pro activado (modo pruebas) ✅'),
+                    content: Text('Pro activado (modo pruebas)'),
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
@@ -45,6 +46,7 @@ class ExpensesScreen extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       builder: (_) => const AddExpenseModal(),
     );
   }
@@ -127,7 +129,9 @@ class _ExpenseTile extends StatelessWidget {
           expense.title,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        subtitle: Text(expense.category),
+        subtitle: Text(expense.subcategoryName == null
+            ? expense.category
+            : '${expense.category} · ${expense.subcategoryName}'),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

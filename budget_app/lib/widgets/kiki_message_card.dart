@@ -33,24 +33,29 @@ class KikiMessageCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 if (showAvatar) ...[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(999),
+                  Container(
+                    width: compact ? 44 : 52,
+                    height: compact ? 44 : 52,
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                    ),
                     child: Image.asset(
                       _kikiAssetForMood(mood),
-                      width: compact ? 40 : 48,
-                      height: compact ? 40 : 48,
-                      fit: BoxFit.cover,
+                      fit: BoxFit.contain,
+                      alignment: Alignment.center,
                     ),
                   ),
                   const SizedBox(width: 12),
                 ],
-
                 Expanded(
                   child: Text(
                     message,
@@ -58,24 +63,22 @@ class KikiMessageCard extends StatelessWidget {
                       fontSize: compact ? 14 : 15,
                       height: 1.35,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black.withOpacity(0.82),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
               ],
             ),
-
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 10),
-
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: onAction,
                   child: Text(actionLabel!),
                 ),
-              )
-            ]
+              ),
+            ],
           ],
         ),
       ),
@@ -91,7 +94,6 @@ class KikiMessageCard extends StatelessWidget {
       case KikiMood.overbudget:
         return 'assets/images/kiki/kiki_overbudget.png';
       case KikiMood.neutral:
-      default:
         return 'assets/images/kiki/kiki_neutral.png';
     }
   }

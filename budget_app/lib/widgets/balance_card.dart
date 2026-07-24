@@ -15,10 +15,10 @@ class BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final remaining = budget - spent;
-    final double percentUsed = budget <= 0 ? 0.0 : (spent / budget).clamp(0.0, 1.0);
+    final double percentUsed =
+        budget <= 0 ? 0.0 : (spent / budget).clamp(0.0, 1.0);
     final int remainingPct = ((1.0 - percentUsed) * 100).round();
     final int usedPct = (percentUsed * 100).round();
-
 
     return Card(
       elevation: 2,

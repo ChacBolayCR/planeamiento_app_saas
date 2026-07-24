@@ -154,7 +154,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         backgroundColor: Theme.of(context)
                             .colorScheme
                             .primary
-                            .withOpacity(0.12),
+                            .withValues(alpha: 0.12),
                         child: const Icon(
                           Icons.person,
                           size: 32,

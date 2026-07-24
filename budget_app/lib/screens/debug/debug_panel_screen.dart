@@ -53,7 +53,8 @@ class DebugPanelScreen extends StatelessWidget {
 
                 Text(
                   'Tips',
-                  style: t.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+                  style: t.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 6),
                 const Text('• Úsalo para probar features Pro sin cobrar.'),

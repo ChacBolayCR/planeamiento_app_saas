@@ -24,73 +24,58 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    final email = _email.text.trim();
+    final pass = _pass.text.trim();
+    final auth = context.read<AuthProvider>();
 
-  final email = _email.text.trim();
-  final pass = _pass.text.trim();
-  final auth = context.read<AuthProvider>();
+    if (email.isEmpty || !email.contains('@')) {
+      _showMessage('Ingresa un correo válido');
+      return;
+    }
 
-  if (email.isEmpty || !email.contains('@')) {
-    _showMessage('Ingresa un correo válido');
-    return;
+    if (pass.length < 6) {
+      _showMessage('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    try {
+      if (_isRegisterMode) {
+        await auth.register(email, pass);
+
+        if (!mounted) return;
+
+        _showMessage('Cuenta creada ✅ Revisa tu correo.');
+
+        setState(() {
+          _isRegisterMode = false;
+        });
+      } else {
+        await auth.login(email, pass);
+
+        if (!mounted) return;
+
+        Navigator.pushReplacementNamed(context, '/dashboard');
+      }
+    } catch (e) {
+      final msg = e.toString().replaceFirst('Exception: ', '');
+
+      _showMessage(msg);
+    }
   }
 
-  if (pass.length < 6) {
-    _showMessage('La contraseña debe tener al menos 6 caracteres');
-    return;
-  }
-
-  try {
-
-    if (_isRegisterMode) {
-
-      await auth.register(email, pass);
-
-      if (!mounted) return;
-
-      _showMessage('Cuenta creada ✅ Revisa tu correo.');
-
-      setState(() {
-        _isRegisterMode = false;
-      });
-
-    } else {
-
-      await auth.login(email, pass);
+  Future<void> _guest() async {
+    try {
+      await context.read<AuthProvider>().loginAsGuest();
 
       if (!mounted) return;
 
       Navigator.pushReplacementNamed(context, '/dashboard');
+    } catch (e) {
+      final msg = e.toString().replaceFirst('Exception: ', '');
+
+      _showMessage(msg);
     }
-
-  } catch (e) {
-
-    final msg = e.toString().replaceFirst('Exception: ', '');
-
-    _showMessage(msg);
-
   }
-}
-
-
-  Future<void> _guest() async {
-
-  try {
-
-    await context.read<AuthProvider>().loginAsGuest();
-
-    if (!mounted) return;
-
-    Navigator.pushReplacementNamed(context, '/dashboard');
-
-  } catch (e) {
-
-    final msg = e.toString().replaceFirst('Exception: ', '');
-
-    _showMessage(msg);
-
-  }
-}
-
 
   void _showMessage(String text) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -114,29 +99,25 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-
               const SizedBox(height: 40),
-
               Center(
                 child: Image.asset(
                   'assets/images/kiki/kiki_idle_main_v2.png',
                   height: 150,
                 ),
               ),
-
               const SizedBox(height: 24),
-
               Text(
-                _isRegisterMode ? 'Crea tu cuenta' : 'Bienvenido a Kiki Finance',
+                _isRegisterMode
+                    ? 'Crea tu cuenta'
+                    : 'Bienvenido a Kiki Finance',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 10),
-
               Text(
                 _isRegisterMode
                     ? 'Registra tu cuenta para guardar tu progreso.'
@@ -144,9 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: Colors.black54),
               ),
-
               const SizedBox(height: 32),
-
               TextField(
                 controller: _email,
                 keyboardType: TextInputType.emailAddress,
@@ -155,9 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   border: OutlineInputBorder(),
                 ),
               ),
-
               const SizedBox(height: 12),
-
               TextField(
                 controller: _pass,
                 obscureText: true,
@@ -166,40 +143,32 @@ class _LoginScreenState extends State<LoginScreen> {
                   border: OutlineInputBorder(),
                 ),
               ),
-
               const SizedBox(height: 20),
-
               SizedBox(
                 height: 48,
                 child: ElevatedButton(
                   onPressed: loading ? null : _submit,
                   child: loading
-                  ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : Text(_isRegisterMode ? 'Crear cuenta' : 'Entrar'),
                 ),
               ),
-
               const SizedBox(height: 12),
-
               TextButton(
                 onPressed: () {
                   setState(() => _isRegisterMode = !_isRegisterMode);
                 },
                 child: Text(
-                  _isRegisterMode
-                      ? 'Ya tengo cuenta'
-                      : 'Crear cuenta',
+                  _isRegisterMode ? 'Ya tengo cuenta' : 'Crear cuenta',
                 ),
               ),
-
               TextButton(
                 onPressed: loading ? null : _guest,
                 child: const Text(
@@ -207,7 +176,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(color: Colors.black54),
                 ),
               ),
-
               const SizedBox(height: 40),
             ],
           ),

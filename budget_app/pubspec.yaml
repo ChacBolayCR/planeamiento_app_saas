@@ -1,8 +1,8 @@
-name: budget_app
+﻿name: budget_app
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.0+5
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -34,7 +34,11 @@ dev_dependencies:
 
 flutter_launcher_icons:
   android: true
+  ios: false
   image_path: "assets/kiki_icon.png"
+  adaptive_icon_foreground: "assets/kiki_icon.png"
+  adaptive_icon_background: "#17152E"
+  min_sdk_android: 24
 
 flutter:
   uses-material-design: true
@@ -50,6 +54,7 @@ flutter:
     - assets/images/kiki/kiki_splash_trimmed_3s.gif
     - assets/images/kiki/kiki_success.png
     - assets/images/google_logo.png
+
 
 
 

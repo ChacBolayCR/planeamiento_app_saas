@@ -26,7 +26,6 @@ class _UpgradeProScreenState extends State<UpgradeProScreen> {
       body: SafeArea(
         child: Column(
           children: [
-
             /// 🔽 CONTENIDO
             Expanded(
               child: SingleChildScrollView(
@@ -34,7 +33,6 @@ class _UpgradeProScreenState extends State<UpgradeProScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-
                     /// 🧠 HEADER
                     _Header(theme: theme),
 
@@ -85,40 +83,39 @@ class _UpgradeProScreenState extends State<UpgradeProScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-
                   /// 🚀 BOTÓN PRINCIPAL
                   SizedBox(
-  width: double.infinity,
-  height: 54,
-  child: ElevatedButton(
-    onPressed: (_loading || budget.isPro)
-        ? null
-        : () async {
-            setState(() => _loading = true);
+                    width: double.infinity,
+                    height: 54,
+                    child: ElevatedButton(
+                      onPressed: (_loading || budget.isPro)
+                          ? null
+                          : () async {
+                              setState(() => _loading = true);
 
-            await budget.buyPro();
+                              await budget.buyPro();
 
-            setState(() => _loading = false);
+                              if (!context.mounted) return;
 
-            if (!mounted) return;
+                              setState(() => _loading = false);
 
-            _showSnack('🎉 Pro activado');
+                              _showSnack('🎉 Pro activado');
 
-            Navigator.pop(context);
-          },
-    child: _loading
-        ? const SizedBox(
-            height: 20,
-            width: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
-        : Text(
-            budget.isPro
-                ? 'Has debloqueado Kiki Pro ✅'
-                : 'Probar 7 días gratis',
-          ),
-  ),
-),
+                              Navigator.pop(context);
+                            },
+                      child: _loading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(
+                              budget.isPro
+                                  ? 'Has debloqueado Kiki Pro ✅'
+                                  : 'Probar 7 días gratis',
+                            ),
+                    ),
+                  ),
 
                   const SizedBox(height: 12),
 
@@ -188,7 +185,7 @@ class _Header extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.12),
+                color: theme.colorScheme.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Icon(
@@ -228,7 +225,7 @@ class _TrialBanner extends StatelessWidget {
 
     return Card(
       elevation: 0,
-      color: theme.colorScheme.primary.withOpacity(0.08),
+      color: theme.colorScheme.primary.withValues(alpha: 0.08),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Text(
@@ -268,7 +265,7 @@ class _ProFeatureTile extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.10),
+                color: theme.colorScheme.primary.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
@@ -277,7 +274,6 @@ class _ProFeatureTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

@@ -48,30 +48,29 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> signInWithGoogle() async {
-  if (_isLoading) return;
+    if (_isLoading) return;
 
-  _setLoading(true);
+    _setLoading(true);
 
-  try {
-    final GoogleSignInAccount? googleUser =
-        await _googleSignIn.signIn();
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
-    if (googleUser == null) {
-      _setLoading(false);
-      return;
-    }
+      if (googleUser == null) {
+        _setLoading(false);
+        return;
+      }
 
-    final GoogleSignInAuthentication googleAuth =
-        await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
 
-    await _auth.signInWithCredential(credential);
+      await _auth.signInWithCredential(credential);
 
-    _isGuest = false;
+      _isGuest = false;
     } on FirebaseAuthException catch (e) {
       throw Exception(_mapFirebaseError(e));
     } finally {
@@ -158,9 +157,8 @@ class AuthProvider extends ChangeNotifier {
 
       final Uint8List bytes = await picked.readAsBytes();
 
-      final ref = FirebaseStorage.instance
-          .ref()
-          .child('users/${user.uid}/profile.jpg');
+      final ref =
+          FirebaseStorage.instance.ref().child('users/${user.uid}/profile.jpg');
 
       await ref.putData(
         bytes,

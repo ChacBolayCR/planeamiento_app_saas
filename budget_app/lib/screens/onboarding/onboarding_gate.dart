@@ -14,7 +14,6 @@ class OnboardingGate extends StatefulWidget {
 }
 
 class _OnboardingGateState extends State<OnboardingGate> {
-
   bool _loading = true;
   bool _seenOnboarding = false;
   bool _isLogged = false;
@@ -26,7 +25,6 @@ class _OnboardingGateState extends State<OnboardingGate> {
   }
 
   Future<void> _check() async {
-
     final prefs = await SharedPreferences.getInstance();
 
     final seen = prefs.getBool('onboarding_done') ?? false;
@@ -41,7 +39,6 @@ class _OnboardingGateState extends State<OnboardingGate> {
 
   @override
   Widget build(BuildContext context) {
-
     if (_loading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),

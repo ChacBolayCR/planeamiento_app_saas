@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../../providers/budget_provider.dart';
 
 // Screens
-import '../dashboard/dashboard_screen.dart'; 
+import '../dashboard/dashboard_screen.dart';
 import '../expenses/expenses_screen.dart';
 import '../profile/profile_screen.dart';
 
@@ -42,20 +42,19 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('Kiki Finance'),
       ),
       body: pages[_currentIndex],
-
       floatingActionButton: (_currentIndex == 0 || _currentIndex == 1)
           ? FloatingActionButton(
               onPressed: () => setState(() => _currentIndex = 1),
               child: const Icon(Icons.add),
             )
           : null,
-
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _onTap,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Resumen'),
-          BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: 'Gastos'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.receipt_long), label: 'Gastos'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
         ],
       ),

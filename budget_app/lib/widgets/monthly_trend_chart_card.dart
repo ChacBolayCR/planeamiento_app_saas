@@ -10,13 +10,27 @@ class MonthlyTrendChartCard extends StatelessWidget {
   List<DateTime> _lastMonths(DateTime now, int count) {
     final firstOfNow = DateTime(now.year, now.month, 1);
     return List.generate(count, (i) {
-      final m = DateTime(firstOfNow.year, firstOfNow.month - (count - 1 - i), 1);
+      final m =
+          DateTime(firstOfNow.year, firstOfNow.month - (count - 1 - i), 1);
       return m;
     });
   }
 
   String _label(DateTime d) {
-    const names = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const names = [
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic'
+    ];
     return '${names[d.month - 1]} ${d.year.toString().substring(2)}';
   }
 
@@ -46,65 +60,69 @@ class MonthlyTrendChartCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Builder(
-  builder: (_) {
-    double? change;
-    if (values != null && values.length >= 2) {
-      final last = values.last;
-      final prev = values[values.length - 2];
-      if (prev > 0) {
-        change = ((last - prev) / prev) * 100;
-      }
-    }
+                  builder: (_) {
+                    double? change;
+                    if (values != null && values.length >= 2) {
+                      final last = values.last;
+                      final prev = values[values.length - 2];
+                      if (prev > 0) {
+                        change = ((last - prev) / prev) * 100;
+                      }
+                    }
 
-    final isUp = (change ?? 0) > 0;
+                    final isUp = (change ?? 0) > 0;
 
-    return Row(
-      children: [
-        Text(
-          'Tendencia $months meses',
-          style: t.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
-        ),
-        const SizedBox(width: 8),
-
-        if (change != null)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: isUp
-                  ? Colors.red.withOpacity(0.15)
-                  : Colors.green.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  isUp ? Icons.trending_up : Icons.trending_down,
-                  size: 16,
-                  color: isUp ? Colors.red : Colors.green,
+                    return Row(
+                      children: [
+                        Text(
+                          'Tendencia $months meses',
+                          style: t.textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w900),
+                        ),
+                        const SizedBox(width: 8),
+                        if (change != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: isUp
+                                  ? Colors.red.withValues(alpha: 0.15)
+                                  : Colors.green.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  isUp
+                                      ? Icons.trending_up
+                                      : Icons.trending_down,
+                                  size: 16,
+                                  color: isUp ? Colors.red : Colors.green,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${change.abs().toStringAsFixed(1)}%',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    color: isUp ? Colors.red : Colors.green,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  '${change.abs().toStringAsFixed(1)}%',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: isUp ? Colors.red : Colors.green,
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
-  },
-),
                 const SizedBox(height: 4),
                 Text(
                   'Gasto total por mes',
-                  style: t.textTheme.bodyMedium?.copyWith(color: Colors.black54),
+                  style:
+                      t.textTheme.bodyMedium?.copyWith(color: Colors.black54),
                 ),
                 const SizedBox(height: 12),
-
-                if (snap.connectionState == ConnectionState.waiting || values == null) ...[
+                if (snap.connectionState == ConnectionState.waiting ||
+                    values == null) ...[
                   const SizedBox(height: 8),
                   const Center(child: CircularProgressIndicator()),
                   const SizedBox(height: 8),
@@ -141,7 +159,8 @@ class _Bars extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context);
-    final maxVal = values.isEmpty ? 1.0 : (values.reduce((a, b) => a > b ? a : b));
+    final maxVal =
+        values.isEmpty ? 1.0 : (values.reduce((a, b) => a > b ? a : b));
     final safeMax = maxVal <= 0 ? 1.0 : maxVal;
 
     return Column(
@@ -161,7 +180,8 @@ class _Bars extends StatelessWidget {
                     width: 70,
                     child: Text(
                       labels[i],
-                      style: t.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                      style: t.textTheme.bodyMedium
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
                   Expanded(
@@ -173,7 +193,7 @@ class _Bars extends StatelessWidget {
                             Container(
                               height: 10,
                               decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.06),
+                                color: Colors.black.withValues(alpha: 0.06),
                                 borderRadius: BorderRadius.circular(999),
                               ),
                             ),
@@ -183,7 +203,9 @@ class _Bars extends StatelessWidget {
                               height: 10,
                               width: w,
                               decoration: BoxDecoration(
-                                color: overBudget ? Colors.redAccent : t.colorScheme.primary,
+                                color: overBudget
+                                    ? Colors.redAccent
+                                    : t.colorScheme.primary,
                                 borderRadius: BorderRadius.circular(999),
                               ),
                             ),
@@ -195,7 +217,8 @@ class _Bars extends StatelessWidget {
                   const SizedBox(width: 10),
                   Text(
                     '$currencySymbol ${v.toStringAsFixed(0)}',
-                    style: t.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
+                    style: t.textTheme.bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w800),
                   ),
                 ],
               ),

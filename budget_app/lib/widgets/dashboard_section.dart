@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class DashboardSection extends StatelessWidget {
-
   final String title;
   final IconData icon;
   final List<Widget> children;
@@ -15,7 +14,6 @@ class DashboardSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Card(
       child: ExpansionTile(
         leading: Icon(icon),

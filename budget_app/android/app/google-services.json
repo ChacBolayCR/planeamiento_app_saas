@@ -48,6 +48,78 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:911034868406:android:449d1b332437cc75fffc17",
+        "android_client_info": {
+          "package_name": "com.josvicdevs.kikibudget"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "911034868406-ses0kifh3h8qn9totqhoaf8d9j4d6tb4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4Xpbjc6Jhilm58UvCC-ukhw1kmneTcwM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "911034868406-ses0kifh3h8qn9totqhoaf8d9j4d6tb4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "911034868406-7lonqdbf4qair6f4ni5dknuqi2uli8f5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.budgetApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:911034868406:android:288a7b682713b88ffffc17",
+        "android_client_info": {
+          "package_name": "com.josvicdevs.kikifinance"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "911034868406-ses0kifh3h8qn9totqhoaf8d9j4d6tb4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD4Xpbjc6Jhilm58UvCC-ukhw1kmneTcwM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "911034868406-ses0kifh3h8qn9totqhoaf8d9j4d6tb4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "911034868406-7lonqdbf4qair6f4ni5dknuqi2uli8f5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.budgetApp"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "configuration_version": "1"
