@@ -9,6 +9,7 @@ import '../../models/financial_commitment.dart';
 import '../../providers/budget_provider.dart';
 import '../../providers/category_catalog_provider.dart';
 import '../../providers/commitments_provider.dart';
+import '../../providers/financial_profile_provider.dart';
 import '../../services/category_catalog.dart';
 import '../../utils/smart_expense_parser.dart';
 
@@ -41,6 +42,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
   bool _isSaving = false;
   bool _createLoanCommitment = false;
   bool _repeatMonthly = false;
+  bool _showAllCategories = false;
   int _paymentDay = DateTime.now().day.clamp(1, 28);
   DateTime _nextPaymentDate = DateTime.now();
 
@@ -343,6 +345,41 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
     );
   }
 
+  List<ExpenseCategory> _orderedCategories(
+    CategoryCatalogProvider catalog,
+    FinancialProfileProvider financialProfile,
+  ) {
+    final all = catalog.categories;
+    final selectedProfileIds =
+        financialProfile.profile.selectedExpenseCategories;
+    if (_showAllCategories || selectedProfileIds.isEmpty) return all;
+
+    final preferredIds = CategoryCatalog.categoryIdsForProfileExpenseIds(
+      selectedProfileIds,
+    );
+    final ordered = <ExpenseCategory>[];
+
+    for (final id in preferredIds) {
+      for (final category in all) {
+        if (category.id == id && !ordered.any((item) => item.id == id)) {
+          ordered.add(category);
+        }
+      }
+    }
+
+    for (final category in all.where((category) => category.isCustom)) {
+      if (!ordered.any((item) => item.id == category.id)) {
+        ordered.add(category);
+      }
+    }
+
+    if (!ordered.any((category) => category.id == _selectedCategoryId)) {
+      ordered.add(catalog.categoryById(_selectedCategoryId));
+    }
+
+    return ordered.isEmpty ? all : ordered;
+  }
+
   ExpenseSubcategory? _selectedSubcategory(ExpenseCategory category) {
     if (_selectedSubcategoryId == null) return null;
     return category.subcategories.firstWhere(
@@ -363,9 +400,10 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
     final symbol =
         context.select<BudgetProvider, String>((p) => p.currencySymbol);
     final catalog = context.watch<CategoryCatalogProvider>();
+    final financialProfile = context.watch<FinancialProfileProvider>();
     final mediaQuery = MediaQuery.of(context);
     final maxModalHeight = mediaQuery.size.height * 0.9;
-    final categories = catalog.categories;
+    final categories = _orderedCategories(catalog, financialProfile);
     final selectedCategory = catalog.categoryById(_selectedCategoryId);
     final subcategories = selectedCategory.subcategories;
 
@@ -424,6 +462,14 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                     ],
                     onChanged: (value) async {
                       if (value == null) return;
+                      if (value == CategoryCatalog.headerYourCategoriesId ||
+                          value == CategoryCatalog.headerAllCategoriesId) {
+                        return;
+                      }
+                      if (value == CategoryCatalog.showAllCategoriesId) {
+                        setState(() => _showAllCategories = true);
+                        return;
+                      }
                       if (value == CategoryCatalog.createCategoryId) {
                         await _createCustomCategory(catalog);
                         return;

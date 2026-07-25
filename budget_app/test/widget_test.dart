@@ -1,9 +1,11 @@
 import 'package:budget_app/models/expense.dart';
 import 'package:budget_app/models/expense_category.dart';
 import 'package:budget_app/models/financial_commitment.dart';
+import 'package:budget_app/models/financial_profile.dart';
 import 'package:budget_app/providers/budget_provider.dart';
 import 'package:budget_app/providers/category_catalog_provider.dart';
 import 'package:budget_app/providers/commitments_provider.dart';
+import 'package:budget_app/providers/financial_profile_provider.dart';
 import 'package:budget_app/services/category_catalog.dart';
 import 'package:budget_app/services/streak_service.dart';
 import 'package:budget_app/utils/smart_expense_parser.dart';
@@ -22,6 +24,107 @@ void main() {
     });
   });
 
+  group('FinancialProfile', () {
+    test('round-trips toMap/fromMap', () {
+      final profile = FinancialProfile(
+        selectedIncomeTypes: const ['income_salary', 'income_sales'],
+        selectedExpenseCategories: const ['expense_housing'],
+        primaryGoal: 'goal_reduce_debt',
+        onboardingCompleted: true,
+        createdAt: DateTime(2026, 7, 24),
+        updatedAt: DateTime(2026, 7, 24, 12),
+      );
+
+      final restored = FinancialProfile.fromMap(profile.toMap());
+
+      expect(restored.selectedIncomeTypes, ['income_salary', 'income_sales']);
+      expect(restored.selectedExpenseCategories, ['expense_housing']);
+      expect(restored.primaryGoal, 'goal_reduce_debt');
+      expect(restored.onboardingCompleted, isTrue);
+    });
+  });
+
+  group('FinancialProfileProvider', () {
+    test('persists profile and completed onboarding', () async {
+      final provider = FinancialProfileProvider();
+      await provider.init();
+
+      await provider.completeOnboarding(
+        incomeTypes: const ['income_salary', 'income_sales'],
+        expenseCategories: const ['expense_housing', 'expense_transport'],
+        primaryGoal: 'goal_organize_budget',
+      );
+
+      final restored = FinancialProfileProvider();
+      await restored.init();
+
+      expect(restored.onboardingCompleted, isTrue);
+      expect(restored.profile.selectedIncomeTypes, contains('income_salary'));
+      expect(restored.profile.selectedExpenseCategories,
+          contains('expense_transport'));
+      expect(restored.profile.primaryGoal, 'goal_organize_budget');
+    });
+
+    test('supports skipped onboarding', () async {
+      final provider = FinancialProfileProvider();
+      await provider.init();
+
+      await provider.completeOnboarding(
+        incomeTypes: const [],
+        expenseCategories: const [],
+        primaryGoal: null,
+      );
+
+      expect(provider.onboardingCompleted, isTrue);
+      expect(provider.profile.selectedIncomeTypes, isEmpty);
+      expect(provider.profile.selectedExpenseCategories, isEmpty);
+    });
+
+    test('updates multiple income and expense selections plus single goal',
+        () async {
+      final provider = FinancialProfileProvider();
+      await provider.init();
+
+      await provider
+          .updateIncomeTypes(const ['income_salary', 'income_business']);
+      await provider
+          .updateExpenseCategories(const ['expense_food', 'expense_health']);
+      await provider.updatePrimaryGoal('goal_save_more');
+
+      expect(provider.profile.selectedIncomeTypes,
+          ['income_salary', 'income_business']);
+      expect(provider.profile.selectedExpenseCategories,
+          ['expense_food', 'expense_health']);
+      expect(provider.profile.primaryGoal, 'goal_save_more');
+    });
+
+    test('reset preferences does not clear existing financial data', () async {
+      final budget = BudgetProvider();
+      final provider = FinancialProfileProvider();
+      await budget.init();
+      await provider.init();
+
+      budget.addExpense(
+        Expense(
+          title: 'Taxi',
+          category: 'Transporte',
+          amount: 2500,
+          date: DateTime(2026, 7, 24),
+        ),
+      );
+      await provider.completeOnboarding(
+        incomeTypes: const ['income_salary'],
+        expenseCategories: const ['expense_transport'],
+        primaryGoal: 'goal_control_expenses',
+      );
+      await provider.resetOnboarding();
+
+      expect(provider.onboardingCompleted, isTrue);
+      expect(provider.profile.selectedExpenseCategories, isEmpty);
+      expect(budget.currentMonthExpenses.length, 1);
+    });
+  });
+
   group('CategoryCatalog', () {
     test('includes Préstamos and its expected subcategories', () {
       final loans = CategoryCatalog.systemCategories.firstWhere(
@@ -29,16 +132,39 @@ void main() {
       );
 
       expect(loans.name, 'Préstamos');
-      expect(
-          loans.subcategories.map((item) => item.name), contains('Personal'));
-      expect(
-          loans.subcategories.map((item) => item.name), contains('Vivienda'));
-      expect(
-          loans.subcategories.map((item) => item.name), contains('Vehículo'));
       expect(loans.subcategories.map((item) => item.name),
-          contains('Tarjeta de crédito'));
+          contains('Compras a cuotas'));
+      expect(loans.subcategories.map((item) => item.name),
+          contains('Tarjetas de crédito'));
+      expect(loans.subcategories.map((item) => item.name),
+          contains('Préstamo personal'));
+      expect(loans.subcategories.map((item) => item.name),
+          contains('Préstamo de vehículo'));
+      expect(loans.subcategories.map((item) => item.name),
+          contains('Préstamo de vivienda'));
     });
 
+    test('maps chosen expense categories to category ids first', () {
+      final ids = CategoryCatalog.categoryIdsForProfileExpenseIds(
+        const ['expense_debt_loans', 'expense_food'],
+      );
+
+      expect(ids.first, CategoryCatalog.loanCategoryId);
+      expect(ids, contains('food'));
+    });
+
+    test('full catalog remains available beyond selected profile categories',
+        () {
+      final selected = CategoryCatalog.categoryIdsForProfileExpenseIds(
+        const ['expense_food'],
+      );
+      final allIds =
+          CategoryCatalog.systemCategories.map((item) => item.id).toList();
+
+      expect(selected, ['food']);
+      expect(allIds, contains(CategoryCatalog.loanCategoryId));
+      expect(allIds.length, greaterThan(selected.length));
+    });
     test('normalizes names for duplicate checks', () {
       expect(ExpenseCategory.normalizeKey('  Café '), 'cafe');
       expect(ExpenseCategory.normalizeKey('Tarjeta de crédito'),
@@ -75,6 +201,21 @@ void main() {
     });
   });
 
+  test('custom categories stay compatible with profile personalization',
+      () async {
+    final provider = CategoryCatalogProvider();
+    await provider.init();
+    final custom = await provider.addCustomCategory('Mascota');
+
+    final selected = CategoryCatalog.categoryIdsForProfileExpenseIds(
+      const ['expense_food'],
+    );
+    final categories = provider.categories;
+
+    expect(custom, isNotNull);
+    expect(selected, ['food']);
+    expect(categories.any((category) => category.id == custom!.id), isTrue);
+  });
   group('SmartExpenseParser', () {
     test('extracts amount from the end of a description', () {
       final parsed = SmartExpenseParser.parse('Café 1500');

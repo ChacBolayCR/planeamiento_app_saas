@@ -8,6 +8,7 @@ import 'providers/auth_provider.dart';
 import 'providers/budget_provider.dart';
 import 'providers/category_catalog_provider.dart';
 import 'providers/commitments_provider.dart';
+import 'providers/financial_profile_provider.dart';
 
 import 'screens/onboarding/onboarding_gate.dart';
 import 'screens/dashboard/dashboard_screen.dart';
@@ -47,6 +48,15 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) {
             final provider = CommitmentsProvider();
+            provider.init();
+            return provider;
+          },
+        ),
+
+        /// FINANCIAL PROFILE
+        ChangeNotifierProvider(
+          create: (_) {
+            final provider = FinancialProfileProvider();
             provider.init();
             return provider;
           },
