@@ -166,45 +166,33 @@ jobs:
       - name: Verify BillingClient dependency
         shell: bash
         run: |
-          set -euo pipefail
+          set +e
 
-          ANDROID_DIR="$GITHUB_WORKSPACE/budget_app/android"
-          GRADLEW="$ANDROID_DIR/gradlew"
-          REPORT_DIR="$GITHUB_WORKSPACE/budget_app/build/reports"
-          REPORT_FILE="$REPORT_DIR/billing-dependency.txt"
+          mkdir -p budget_app/build/reports
 
-          echo "Workspace: $GITHUB_WORKSPACE"
-          echo "Directorio Android: $ANDROID_DIR"
+          cd budget_app/android
 
-          if [ ! -d "$ANDROID_DIR" ]; then
-            echo "ERROR: No existe el directorio Android."
-            find "$GITHUB_WORKSPACE" -maxdepth 3 -type d | sort
-            exit 1
-          fi
-
-          if [ ! -f "$GRADLEW" ]; then
-            echo "ERROR: No existe el Gradle wrapper en $GRADLEW"
-            ls -la "$ANDROID_DIR"
-            exit 1
-          fi
-
-          mkdir -p "$REPORT_DIR"
-          chmod +x "$GRADLEW"
-
-          cd "$ANDROID_DIR"
+          chmod +x gradlew
 
           ./gradlew app:dependencyInsight \
-            --dependency com.android.billingclient:billing \
-            --configuration releaseRuntimeClasspath \
-            --no-daemon | tee "$REPORT_FILE"
+          --dependency com.android.billingclient:billing \
+          --configuration releaseRuntimeClasspath \
+          --no-daemon \
+          > ../build/reports/billing.txt 2>&1
 
-          if ! grep -Eq 'com\.android\.billingclient:billing:8\.[0-9.]+' "$REPORT_FILE"; then
-            echo "ERROR: No se encontró BillingClient 8.x."
-            grep -E 'com\.android\.billingclient:billing:' "$REPORT_FILE" || true
-            exit 1
+          EXIT_CODE=$?
+
+          echo "Gradle terminó con código: $EXIT_CODE"
+
+          cat ../build/reports/billing.txt
+
+          if grep -Eq "com\.android\.billingclient:billing:8\.[0-9.]+" ../build/reports/billing.txt; then
+          echo "✅ Billing 8 encontrado."
+          exit 0
           fi
 
-          echo "BillingClient 8.x verificado correctamente."
+          echo "❌ Billing 8 NO encontrado."
+          exit 1
 
       - name: Build APK release
         run: flutter build apk --release
