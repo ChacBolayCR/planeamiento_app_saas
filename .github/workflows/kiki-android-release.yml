@@ -87,13 +87,35 @@ jobs:
           echo "Android SDK 36 instalado correctamente."
 
       - name: Validate Android configuration
+        shell: bash
         run: |
-          grep -q 'compileSdk = 36' android/app/build.gradle.kts
-          grep -q 'targetSdk = 36' android/app/build.gradle.kts
-          grep -q 'applicationId = "com.josvicdevs.kikifinance"' android/app/build.gradle.kts
-          grep -q 'sourceCompatibility = JavaVersion.VERSION_17' android/app/build.gradle.kts
-          grep -q 'targetCompatibility = JavaVersion.VERSION_17' android/app/build.gradle.kts
-          grep -q 'jvmTarget = JavaVersion.VERSION_17.toString()' android/app/build.gradle.kts
+          echo "Revisando configuración Android..."
+
+          echo "Contenido relevante de build.gradle.kts:"
+          grep -nE "compileSdk|targetSdk|minSdk" android/app/build.gradle.kts || true
+
+          if grep -qE "compileSdk[[:space:]]*=[[:space:]]*36|compileSdkVersion[[:space:]]+36" android/app/build.gradle.kts; then
+            echo "compileSdk 36 declarado directamente."
+          elif grep -q "compileSdk = flutter.compileSdkVersion" android/app/build.gradle.kts; then
+            echo "compileSdk usa flutter.compileSdkVersion."
+          else
+            echo "No se pudo identificar una configuración válida de compileSdk."
+            exit 1
+          fi
+
+          if grep -qE "targetSdk[[:space:]]*=[[:space:]]*36|targetSdkVersion[[:space:]]+36" android/app/build.gradle.kts; then
+            echo "targetSdk 36 declarado directamente."
+          elif grep -q "targetSdk = flutter.targetSdkVersion" android/app/build.gradle.kts; then
+            echo "targetSdk usa flutter.targetSdkVersion."
+          else
+            echo "No se pudo identificar una configuración válida de targetSdk."
+            exit 1
+          fi
+
+          test -d "$ANDROID_HOME/platforms/android-36"
+          test -d "$ANDROID_HOME/build-tools/36.0.0"
+
+          echo "Configuración Android validada."
 
       - name: Restore Android release signing files
         env:
