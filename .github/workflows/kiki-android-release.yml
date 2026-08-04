@@ -54,14 +54,37 @@ jobs:
           java -version
 
       - name: Install Android SDK 36
+        shell: bash
         run: |
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+
+          if [ ! -x "$SDKMANAGER" ]; then
+            echo "sdkmanager no existe en: $SDKMANAGER"
+            exit 1
+          fi
+
+          # sdkmanager puede cerrar la tubería cuando termina de leer
+          # las licencias. Ignoramos el SIGPIPE de `yes`, pero validamos
+          # el código real de sdkmanager.
+          set +o pipefail
+          yes | "$SDKMANAGER" --licenses >/dev/null
+          LICENSE_STATUS=${PIPESTATUS[1]}
+          set -o pipefail
+
+          if [ "$LICENSE_STATUS" -ne 0 ]; then
+            echo "sdkmanager --licenses falló con código $LICENSE_STATUS"
+            exit "$LICENSE_STATUS"
+          fi
+
+          "$SDKMANAGER" \
             "platform-tools" \
             "platforms;android-36" \
             "build-tools;36.0.0"
+
           test -d "$ANDROID_HOME/platforms/android-36"
           test -d "$ANDROID_HOME/build-tools/36.0.0"
+
+          echo "Android SDK 36 instalado correctamente."
 
       - name: Validate Android configuration
         run: |
