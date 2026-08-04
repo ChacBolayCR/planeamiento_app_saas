@@ -164,34 +164,32 @@ jobs:
         run: flutter test
 
       - name: Verify BillingClient dependency
+        shell: bash
         working-directory: budget_app/android
         run: |
-          mkdir -p ../build/reports
-          set +e
-          ./gradlew app:dependencyInsight --dependency com.android.billingclient --configuration releaseRuntimeClasspath > ../build/reports/billing-dependency.txt 2>&1
-          status=$?
-          if [ "$status" -ne 0 ] || ! grep -q 'com.android.billingclient' ../build/reports/billing-dependency.txt; then
-            ./gradlew app:dependencyInsight --dependency billing --configuration releaseRuntimeClasspath > ../build/reports/billing-dependency.txt 2>&1
-            status=$?
-          fi
-          set -e
-          if [ "$status" -ne 0 ]; then
-            echo "Unable to inspect BillingClient dependency." >&2
-            exit "$status"
+          set -euo pipefail
+
+          REPORT_DIR="../build/reports"
+          REPORT_FILE="$REPORT_DIR/billing-dependency.txt"
+
+          mkdir -p "$REPORT_DIR"
+          chmod +x ./gradlew
+
+          echo "Inspeccionando BillingClient..."
+
+          ./gradlew app:dependencyInsight \
+            --dependency com.android.billingclient:billing \
+            --configuration releaseRuntimeClasspath \
+            --no-daemon | tee "$REPORT_FILE"
+
+          if ! grep -Eq 'com\.android\.billingclient:billing:8\.[0-9.]+' "$REPORT_FILE"; then
+            echo "ERROR: No se encontró BillingClient 8.x en releaseRuntimeClasspath."
+            echo "Versiones encontradas:"
+            grep -E 'com\.android\.billingclient:billing:' "$REPORT_FILE" || true
+            exit 1
           fi
 
-          billing_version=$(grep -Eo 'com\.android\.billingclient:billing:[0-9]+\.[0-9]+\.[0-9]+' ../build/reports/billing-dependency.txt | sed 's/.*://' | sort -V | tail -n 1)
-          if [ -z "$billing_version" ]; then
-            echo "BillingClient version was not found in dependencyInsight output." >&2
-            exit 1
-          fi
-          major=${billing_version%%.*}
-          if [ "$major" -lt 8 ]; then
-            echo "BillingClient $billing_version is below required 8.0.0." >&2
-            exit 1
-          fi
-          echo "$billing_version" > ../build/reports/billing-version.txt
-          echo "BillingClient $billing_version verified."
+          echo "BillingClient 8.x verificado correctamente."
 
       - name: Build APK release
         run: flutter build apk --release
