@@ -9,6 +9,7 @@ import 'providers/budget_provider.dart';
 import 'providers/category_catalog_provider.dart';
 import 'providers/commitments_provider.dart';
 import 'providers/financial_profile_provider.dart';
+import 'design_system/kiki_theme.dart';
 
 import 'screens/onboarding/onboarding_gate.dart';
 import 'screens/dashboard/dashboard_screen.dart';
@@ -75,10 +76,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Kiki Finance',
-        theme: ThemeData(
-          useMaterial3: true,
-          colorSchemeSeed: Colors.indigo,
-        ),
+        theme: KikiTheme.light(),
         routes: {
           '/dashboard': (_) => const DashboardScreen(),
         },

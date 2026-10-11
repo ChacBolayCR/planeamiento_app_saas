@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../design_system/components/kiki_card.dart';
+import '../design_system/kiki_colors.dart';
+import '../design_system/kiki_radius.dart';
+import '../design_system/kiki_spacing.dart';
+
 class KikiScoreCard extends StatelessWidget {
   final int score;
 
@@ -9,10 +14,10 @@ class KikiScoreCard extends StatelessWidget {
   });
 
   Color _scoreColor() {
-    if (score >= 90) return const Color(0xFF43A047);
-    if (score >= 75) return const Color(0xFF7CB342);
-    if (score >= 60) return const Color(0xFFF9A825);
-    return const Color(0xFFE53935);
+    if (score >= 90) return KikiColors.success;
+    if (score >= 75) return const Color(0xFF6FAF52);
+    if (score >= 60) return KikiColors.warning;
+    return KikiColors.error;
   }
 
   String _scoreLabel() {
@@ -28,74 +33,63 @@ class KikiScoreCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(
-                Icons.insights_rounded,
-                color: color,
-                size: 28,
-              ),
+    return KikiCard(
+      semanticLabel: 'Resumen financiero $score de 100',
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(KikiRadius.medium),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Resumen',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+            child: Icon(
+              Icons.insights_rounded,
+              color: color,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: KikiSpacing.md),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Resumen', style: theme.textTheme.titleSmall),
+                const SizedBox(height: KikiSpacing.sm),
+                RichText(
+                  textScaler: MediaQuery.textScalerOf(context),
+                  text: TextSpan(
+                    text: '$score',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: color,
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  RichText(
-                    textScaler: MediaQuery.textScalerOf(context),
-                    text: TextSpan(
-                      text: '$score',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: '/100',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                          ),
+                    children: [
+                      TextSpan(
+                        text: '/100',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    _scoreLabel(),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                    ),
+                ),
+                const SizedBox(height: KikiSpacing.xs),
+                Text(
+                  _scoreLabel(),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

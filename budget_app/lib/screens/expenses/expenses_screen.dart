@@ -2,8 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../providers/budget_provider.dart';
+import '../../design_system/components/kiki_card.dart';
+import '../../design_system/components/kiki_empty_state.dart';
+import '../../design_system/kiki_colors.dart';
+import '../../design_system/kiki_radius.dart';
+import '../../design_system/kiki_spacing.dart';
 import '../../models/expense.dart';
+import '../../providers/budget_provider.dart';
+import '../../utils/kiki_avatar_assets.dart';
 import 'add_expenses_modal.dart';
 
 class ExpensesScreen extends StatelessWidget {
@@ -17,7 +23,8 @@ class ExpensesScreen extends StatelessWidget {
       builder: (_) => AlertDialog(
         title: const Text('Límite Free alcanzado'),
         content: Text(
-            'En la versión gratuita puedes registrar hasta $limit gastos por mes.'),
+          'En la versión gratuita puedes registrar hasta $limit gastos por mes.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -60,8 +67,10 @@ class ExpensesScreen extends StatelessWidget {
     final canAdd = budget.isPro || expenses.length < limit;
 
     return Scaffold(
+      backgroundColor: KikiColors.background,
       appBar: AppBar(title: const Text('Gastos')),
       floatingActionButton: FloatingActionButton(
+        tooltip: 'Agregar gasto',
         onPressed: () async {
           if (canAdd) {
             _openAdd(context);
@@ -69,14 +78,34 @@ class ExpensesScreen extends StatelessWidget {
             await _showFreeLimitDialog(context, limit);
           }
         },
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add_rounded),
       ),
       body: expenses.isEmpty
-          ? const Center(child: Text('No hay gastos registrados'))
+          ? Padding(
+              padding: const EdgeInsets.all(KikiSpacing.lg),
+              child: Center(
+                child: KikiEmptyState(
+                  assetPath: KikiAvatarAssets.rest,
+                  title: 'No hay gastos registrados todavía.',
+                  message:
+                      'Agrega tu primer gasto para que Kiki empiece a ordenar tu historial.',
+                  actionLabel: 'Agregar primer gasto',
+                  onAction: canAdd
+                      ? () => _openAdd(context)
+                      : () => _showFreeLimitDialog(context, limit),
+                ),
+              ),
+            )
           : ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.fromLTRB(
+                KikiSpacing.lg,
+                KikiSpacing.sm,
+                KikiSpacing.lg,
+                KikiSpacing.section,
+              ),
               itemCount: expenses.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 6),
+              separatorBuilder: (_, __) =>
+                  const SizedBox(height: KikiSpacing.sm),
               itemBuilder: (context, index) {
                 return _ExpenseTile(expense: expenses[index]);
               },
@@ -93,17 +122,17 @@ class _ExpenseTile extends StatelessWidget {
   IconData _iconByCategory(String category) {
     switch (category) {
       case 'Servicios':
-        return Icons.wifi;
+        return Icons.wifi_rounded;
       case 'Alquiler':
-        return Icons.home;
+        return Icons.home_rounded;
       case 'Comida':
-        return Icons.restaurant;
+        return Icons.restaurant_rounded;
       case 'Transporte':
-        return Icons.directions_car;
+        return Icons.directions_car_rounded;
       case 'Marketing':
-        return Icons.campaign;
+        return Icons.campaign_rounded;
       default:
-        return Icons.receipt_long;
+        return Icons.receipt_long_rounded;
     }
   }
 
@@ -112,43 +141,67 @@ class _ExpenseTile extends StatelessWidget {
     final provider = context.read<BudgetProvider>();
     final symbol = provider.currencySymbol;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.blue.shade100,
-          child: Icon(
-            _iconByCategory(expense.category),
-            color: Colors.blue,
+    return KikiCard(
+      padding: const EdgeInsets.all(KikiSpacing.md),
+      semanticLabel: 'Gasto ${expense.title}',
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: KikiColors.surfaceSoft,
+              borderRadius: BorderRadius.circular(KikiRadius.medium),
+            ),
+            child: Icon(
+              _iconByCategory(expense.category),
+              color: KikiColors.primary,
+            ),
           ),
-        ),
-        title: Text(
-          expense.title,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(expense.subcategoryName == null
-            ? expense.category
-            : '${expense.category} · ${expense.subcategoryName}'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '$symbol${expense.amount.toStringAsFixed(2)}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+          const SizedBox(width: KikiSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  expense.title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                const SizedBox(height: KikiSpacing.xs),
+                Text(
+                  expense.subcategoryName == null
+                      ? expense.category
+                      : '${expense.category} · ${expense.subcategoryName}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: KikiColors.textSecondary,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: KikiSpacing.sm),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '$symbol${expense.amount.toStringAsFixed(2)}',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: KikiColors.textPrimary,
+                    ),
               ),
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () => _confirmDelete(context, provider),
-            ),
-          ],
-        ),
+              IconButton(
+                tooltip: 'Eliminar gasto',
+                icon: const Icon(Icons.delete_outline_rounded),
+                color: KikiColors.error,
+                onPressed: () => _confirmDelete(context, provider),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -165,7 +218,10 @@ class _ExpenseTile extends StatelessWidget {
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: KikiColors.error,
+              foregroundColor: KikiColors.surface,
+            ),
             onPressed: () {
               provider.removeExpense(expense.id);
               Navigator.pop(context);

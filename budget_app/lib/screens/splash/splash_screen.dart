@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../providers/budget_provider.dart';
+import '../../design_system/kiki_colors.dart';
 import '../../navigation/main_navigation.dart';
+import '../../providers/budget_provider.dart';
+import '../../utils/kiki_avatar_assets.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -23,7 +25,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2800),
+      duration: const Duration(milliseconds: 2200),
     );
 
     _fadeAnimation = CurvedAnimation(
@@ -31,7 +33,7 @@ class _SplashScreenState extends State<SplashScreen>
       curve: Curves.easeInOut,
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
+    _scaleAnimation = Tween<double>(begin: 0.98, end: 1.02).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
 
@@ -43,14 +45,14 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    await Future.delayed(const Duration(milliseconds: 3000));
+    await Future.delayed(const Duration(milliseconds: 2400));
 
     if (!mounted) return;
 
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 500),
+        transitionDuration: const Duration(milliseconds: 420),
         pageBuilder: (_, animation, __) => const MainNavigation(),
         transitionsBuilder: (_, animation, __, child) {
           return FadeTransition(
@@ -70,67 +72,39 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      body: Container(
-        // 🎨 Fondo premium suave
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFF5F7FA),
-              Color(0xFFE8EDF5),
-            ],
-          ),
-        ),
+      backgroundColor: KikiColors.background,
+      body: SafeArea(
         child: Center(
           child: FadeTransition(
             opacity: _fadeAnimation,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // 🐱 Kiki con zoom suave
                 ScaleTransition(
                   scale: _scaleAnimation,
-                  child: Column(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
-                              blurRadius: 30,
-                              offset: const Offset(0, 12),
-                            ),
-                          ],
-                        ),
-                        child: Image.asset(
-                          'assets/images/kiki/kiki_ceo_tablet.png',
-                          width: 180,
-                        ),
-                      ),
-                    ],
+                  child: Image.asset(
+                    KikiAvatarAssets.master,
+                    height: 220,
+                    fit: BoxFit.contain,
+                    alignment: Alignment.center,
                   ),
                 ),
-
-                const SizedBox(height: 32),
-
-                const Text(
+                const SizedBox(height: 28),
+                Text(
                   'Kiki Finance',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    color: KikiColors.textPrimary,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
-
                 const SizedBox(height: 8),
-
-                const Text(
-                  'La libertad empieza con educación financiera 💳',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black54,
+                Text(
+                  'Control simple para tu dinero.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: KikiColors.textSecondary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],

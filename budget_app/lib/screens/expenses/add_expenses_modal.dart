@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../design_system/components/kiki_button.dart';
+import '../../design_system/components/kiki_card.dart';
+import '../../design_system/kiki_spacing.dart';
 import '../../models/expense.dart';
 import '../../models/expense_category.dart';
 import '../../models/financial_commitment.dart';
@@ -422,7 +425,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
         child: ConstrainedBox(
           constraints: BoxConstraints(maxHeight: maxModalHeight),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            padding: const EdgeInsets.all(KikiSpacing.lg),
             child: Form(
               key: _formKey,
               onChanged: () => setState(() {}),
@@ -435,9 +438,9 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: KikiSpacing.lg),
                   DropdownButtonFormField<String>(
-                    value: _selectedCategoryId,
+                    initialValue: _selectedCategoryId,
                     decoration: const InputDecoration(
                       labelText: 'Categoría',
                       border: OutlineInputBorder(),
@@ -449,7 +452,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                           child: Row(
                             children: [
                               Icon(category.icon, size: 18),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: KikiSpacing.sm),
                               Text(category.name),
                             ],
                           ),
@@ -486,9 +489,9 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                       });
                     },
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: KikiSpacing.md),
                   DropdownButtonFormField<String>(
-                    value: _selectedSubcategoryId,
+                    initialValue: _selectedSubcategoryId,
                     decoration: const InputDecoration(
                       labelText: 'Subcategoría',
                       border: OutlineInputBorder(),
@@ -514,7 +517,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                       setState(() => _selectedSubcategoryId = value);
                     },
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: KikiSpacing.md),
                   TextFormField(
                     controller: _titleController,
                     textCapitalization: TextCapitalization.sentences,
@@ -550,7 +553,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: KikiSpacing.md),
                   TextFormField(
                     controller: _amountController,
                     keyboardType:
@@ -572,7 +575,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: KikiSpacing.md),
                   if (_isLoanCategory)
                     _LoanFollowUpCard(
                       createCommitment: _createLoanCommitment,
@@ -596,7 +599,7 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                           setState(() => _repeatMonthly = value ?? false),
                     ),
                   if (_createLoanCommitment || _repeatMonthly) ...[
-                    const SizedBox(height: 12),
+                    const SizedBox(height: KikiSpacing.md),
                     _CommitmentFields(
                       isLoan: _createLoanCommitment,
                       symbol: symbol,
@@ -613,19 +616,14 @@ class _AddExpenseModalState extends State<AddExpenseModal> {
                       onPickDate: _pickNextPaymentDate,
                     ),
                   ],
-                  const SizedBox(height: 20),
+                  const SizedBox(height: KikiSpacing.xl),
                   SizedBox(
                     height: 48,
-                    child: ElevatedButton(
+                    child: KikiButton(
+                      label: 'Guardar gasto',
+                      loading: _isSaving,
                       onPressed:
                           _isSaving || !_isFormValid ? null : _saveExpense,
-                      child: _isSaving
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Guardar gasto'),
                     ),
                   ),
                 ],
@@ -651,38 +649,38 @@ class _LoanFollowUpCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      elevation: 0,
-      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '¿Quieres llevar el seguimiento de este préstamo?',
-              style: theme.textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w800),
+    return KikiCard(
+      variant: KikiCardVariant.highlighted,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '¿Quieres llevar el seguimiento de este préstamo?',
+            style: theme.textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+              'Kiki puede ayudarte a llevar el saldo y tus próximas cuotas.'),
+          RadioGroup<bool>(
+            groupValue: createCommitment,
+            onChanged: (value) => onChanged(value ?? false),
+            child: const Column(
+              children: [
+                RadioListTile<bool>(
+                  value: false,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text('Solo registrar este gasto'),
+                ),
+                RadioListTile<bool>(
+                  value: true,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text('Crear compromiso recurrente'),
+                ),
+              ],
             ),
-            const SizedBox(height: 6),
-            const Text(
-                'Kiki puede ayudarte a llevar el saldo y tus próximas cuotas.'),
-            RadioListTile<bool>(
-              value: false,
-              groupValue: createCommitment,
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Solo registrar este gasto'),
-              onChanged: (value) => onChanged(value ?? false),
-            ),
-            RadioListTile<bool>(
-              value: true,
-              groupValue: createCommitment,
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Crear compromiso recurrente'),
-              onChanged: (value) => onChanged(value ?? true),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -731,7 +729,7 @@ class _CommitmentFields extends StatelessWidget {
             border: const OutlineInputBorder(),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: KikiSpacing.md),
         TextFormField(
           controller: monthlyAmountController,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -744,7 +742,7 @@ class _CommitmentFields extends StatelessWidget {
             border: const OutlineInputBorder(),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: KikiSpacing.md),
         TextFormField(
           controller: totalAmountController,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -757,7 +755,7 @@ class _CommitmentFields extends StatelessWidget {
             border: const OutlineInputBorder(),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: KikiSpacing.md),
         Row(
           children: [
             Expanded(
@@ -775,7 +773,7 @@ class _CommitmentFields extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: KikiSpacing.sm),
             Expanded(
               child: TextFormField(
                 controller: remainingAmountController,
@@ -793,7 +791,7 @@ class _CommitmentFields extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: KikiSpacing.md),
         TextFormField(
           controller: installmentsController,
           keyboardType: TextInputType.number,
@@ -803,12 +801,12 @@ class _CommitmentFields extends StatelessWidget {
             border: OutlineInputBorder(),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: KikiSpacing.md),
         Row(
           children: [
             Expanded(
               child: DropdownButtonFormField<int>(
-                value: paymentDay.clamp(1, 31),
+                initialValue: paymentDay.clamp(1, 31),
                 decoration: const InputDecoration(
                   labelText: 'Día de pago',
                   border: OutlineInputBorder(),
@@ -825,7 +823,7 @@ class _CommitmentFields extends StatelessWidget {
                 },
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: KikiSpacing.sm),
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: onPickDate,

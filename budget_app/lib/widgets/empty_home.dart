@@ -11,9 +11,9 @@ class EmptyHome extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            /// 🐱 KIKI (imagen estática)
+            /// ðŸ± KIKI (imagen estática)
             Image.asset(
-              'assets/images/kiki_idle.png',
+              'assets/images/avatars/kiki/kiki_rest.png',
               height: 160,
             ),
 

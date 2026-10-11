@@ -20,15 +20,15 @@ class OnboardingGate extends StatelessWidget {
       );
     }
 
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const LoginScreen();
+    }
+
     if (!profile.onboardingCompleted) {
       return const OnboardingScreen();
     }
 
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      return const DashboardScreen();
-    }
-
-    return const LoginScreen();
+    return const DashboardScreen();
   }
 }

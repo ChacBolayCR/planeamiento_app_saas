@@ -26,19 +26,19 @@ class _UpgradeProScreenState extends State<UpgradeProScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            /// 🔽 CONTENIDO
+            /// ðŸ”½ CONTENIDO
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    /// 🧠 HEADER
+                    /// ðŸ§  HEADER
                     _Header(theme: theme),
 
                     const SizedBox(height: 16),
 
-                    /// 💎 FEATURES
+                    /// ðŸ’Ž FEATURES
                     const _ProFeatureTile(
                       icon: Icons.all_inclusive_rounded,
                       title: 'Gastos ilimitados',
@@ -68,7 +68,7 @@ class _UpgradeProScreenState extends State<UpgradeProScreen> {
 
                     const SizedBox(height: 20),
 
-                    /// 🧪 TRIAL INFO
+                    /// ðŸ§ª TRIAL INFO
                     if (budget.isTrialActive)
                       _TrialBanner(daysLeft: budget.trialDaysLeft),
 
@@ -78,12 +78,12 @@ class _UpgradeProScreenState extends State<UpgradeProScreen> {
               ),
             ),
 
-            /// 🔻 FOOTER
+            /// ðŸ”» FOOTER
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  /// 🚀 BOTÓN PRINCIPAL
+                  /// ðŸš€ BOTÃ“N PRINCIPAL
                   SizedBox(
                     width: double.infinity,
                     height: 54,
@@ -99,7 +99,7 @@ class _UpgradeProScreenState extends State<UpgradeProScreen> {
 
                               setState(() => _loading = false);
 
-                              _showSnack('🎉 Pro activado');
+                              _showSnack('ðŸŽ‰ Pro activado');
 
                               Navigator.pop(context);
                             },
@@ -111,7 +111,7 @@ class _UpgradeProScreenState extends State<UpgradeProScreen> {
                             )
                           : Text(
                               budget.isPro
-                                  ? 'Has debloqueado Kiki Pro ✅'
+                                  ? 'Has debloqueado Kiki Pro âœ…'
                                   : 'Probar 7 días gratis',
                             ),
                     ),
@@ -119,7 +119,7 @@ class _UpgradeProScreenState extends State<UpgradeProScreen> {
 
                   const SizedBox(height: 12),
 
-                  /// 🔄 RESTORE
+                  /// ðŸ”„ RESTORE
                   TextButton(
                     onPressed: _restoring
                         ? null
@@ -143,7 +143,7 @@ class _UpgradeProScreenState extends State<UpgradeProScreen> {
 
                   const SizedBox(height: 6),
 
-                  /// 🧾 DISCLAIMER
+                  /// ðŸ§¾ DISCLAIMER
                   const Text(
                     'Suscripción mensual. Cancela en cualquier momento.',
                     textAlign: TextAlign.center,
@@ -196,7 +196,7 @@ class _Header extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Kiki Pro ✨',
+              'Kiki Pro âœ¨',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w900,
               ),

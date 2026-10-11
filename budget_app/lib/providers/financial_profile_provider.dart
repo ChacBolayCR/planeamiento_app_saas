@@ -38,16 +38,25 @@ class FinancialProfileProvider extends ChangeNotifier {
   Future<void> completeOnboarding({
     required List<String> incomeTypes,
     required List<String> expenseCategories,
+    required List<String> selectedGoals,
     required String? primaryGoal,
+    String selectedAvatarId = FinancialProfile.defaultAvatarId,
   }) async {
-    final now = DateTime.now();
+    final uniqueGoals = _unique(selectedGoals);
+    final safePrimaryGoal =
+        primaryGoal != null && uniqueGoals.contains(primaryGoal)
+            ? primaryGoal
+            : null;
+
     _profile = _profile.copyWith(
       selectedIncomeTypes: _unique(incomeTypes),
       selectedExpenseCategories: _unique(expenseCategories),
-      primaryGoal: primaryGoal,
+      selectedGoals: uniqueGoals,
+      primaryGoal: safePrimaryGoal,
+      selectedAvatarId: _safeAvatarId(selectedAvatarId),
       onboardingCompleted: true,
       createdAt: _profile.createdAt,
-      updatedAt: now,
+      updatedAt: DateTime.now(),
     );
     await _save();
     notifyListeners();
@@ -71,16 +80,42 @@ class FinancialProfileProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> updatePrimaryGoal(String? primaryGoal) async {
+  Future<void> updateSelectedGoals(List<String> selectedGoals) async {
+    final goals = _unique(selectedGoals);
     _profile = _profile.copyWith(
-      primaryGoal: primaryGoal,
+      selectedGoals: goals,
+      primaryGoal:
+          goals.contains(_profile.primaryGoal) ? _profile.primaryGoal : null,
       updatedAt: DateTime.now(),
     );
     await _save();
     notifyListeners();
   }
 
-  Future<void> resetOnboarding() async {
+  Future<void> updatePrimaryGoal(String? primaryGoal) async {
+    _profile = _profile.copyWith(
+      primaryGoal:
+          primaryGoal != null && _profile.selectedGoals.contains(primaryGoal)
+              ? primaryGoal
+              : null,
+      updatedAt: DateTime.now(),
+    );
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> updateSelectedAvatar(String selectedAvatarId) async {
+    _profile = _profile.copyWith(
+      selectedAvatarId: _safeAvatarId(selectedAvatarId),
+      updatedAt: DateTime.now(),
+    );
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> resetOnboarding() => resetPersonalization();
+
+  Future<void> resetPersonalization() async {
     _profile = FinancialProfile.empty().copyWith(
       onboardingCompleted: true,
       updatedAt: DateTime.now(),
@@ -100,6 +135,21 @@ class FinancialProfileProvider extends ChangeNotifier {
   }
 
   List<String> _unique(List<String> values) {
-    return values.where((value) => value.trim().isNotEmpty).toSet().toList();
+    final seen = <String>{};
+    final result = <String>[];
+    for (final value in values) {
+      final clean = value.trim();
+      if (clean.isEmpty || seen.contains(clean)) continue;
+      seen.add(clean);
+      result.add(clean);
+    }
+    return result;
+  }
+
+  String _safeAvatarId(String value) {
+    return switch (value) {
+      'avatar_kiki' || 'avatar_ra' || 'avatar_osi' => value,
+      _ => FinancialProfile.defaultAvatarId,
+    };
   }
 }

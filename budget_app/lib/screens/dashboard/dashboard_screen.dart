@@ -4,6 +4,9 @@ import 'package:provider/provider.dart';
 
 import '../../providers/budget_provider.dart';
 import '../../providers/commitments_provider.dart';
+import '../../providers/financial_profile_provider.dart';
+import '../../design_system/kiki_colors.dart';
+import '../../design_system/kiki_spacing.dart';
 import '../../services/kiki_insights_service.dart';
 import '../../services/achievement_service.dart';
 
@@ -19,6 +22,7 @@ import '../../widgets/monthly_overview_card.dart';
 import '../../widgets/monthly_trend_chart_card.dart';
 import '../../widgets/monthly_commitments_card.dart';
 import '../../widgets/secret_tap_detector.dart';
+import '../../utils/kiki_mood_visual.dart';
 
 import '../debug/debug_panel_screen.dart';
 import '../expenses/add_expenses_modal.dart';
@@ -55,10 +59,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: KikiColors.background,
       appBar: const _DashAppBar(),
       body: _pages[_index],
       floatingActionButton: _index == 0
           ? FloatingActionButton(
+              tooltip: 'Agregar gasto',
               onPressed: () {
                 showModalBottomSheet(
                   context: context,
@@ -70,24 +76,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: const Icon(Icons.add),
             )
           : null,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _index,
-        onTap: (i) {
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (i) {
           setState(() {
             _index = i;
           });
         },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.dashboard_rounded),
             label: 'Dashboard',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.receipt_long),
+          NavigationDestination(
+            icon: Icon(Icons.receipt_long_rounded),
             label: 'Gastos',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+          NavigationDestination(
+            icon: Icon(Icons.person_rounded),
             label: 'Perfil',
           ),
         ],
@@ -143,6 +149,7 @@ class _DashboardHomeState extends State<DashboardHome> {
   Widget build(BuildContext context) {
     final budget = context.watch<BudgetProvider>();
     final commitmentsProvider = context.watch<CommitmentsProvider>();
+    final financialProfile = context.watch<FinancialProfileProvider>();
 
     final selected = budget.selectedMonthDate;
     final now = DateTime.now();
@@ -190,22 +197,42 @@ class _DashboardHomeState extends State<DashboardHome> {
       );
     }
 
-    Widget quickAdd(String emoji, String category) {
-      return GestureDetector(
+    Widget quickAdd(String _, String category) {
+      final fixedCategory = category.startsWith('Caf') ? 'Café' : category;
+      final icon = switch (fixedCategory) {
+        'Café' => Icons.local_cafe_rounded,
+        'Comida' => Icons.restaurant_rounded,
+        'Transporte' => Icons.directions_car_rounded,
+        'Compras' => Icons.shopping_bag_rounded,
+        _ => Icons.add_circle_outline_rounded,
+      };
+
+      return InkWell(
+        borderRadius: BorderRadius.circular(16),
         onTap: () {
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
             useSafeArea: true,
-            builder: (_) => AddExpenseModal(prefilledCategory: category),
+            builder: (_) => AddExpenseModal(prefilledCategory: fixedCategory),
           );
         },
-        child: Column(
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 26)),
-            const SizedBox(height: 4),
-            Text(category, style: const TextStyle(fontSize: 12)),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: KikiSpacing.sm,
+            horizontal: KikiSpacing.xs,
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: KikiColors.primary, size: 26),
+              const SizedBox(height: KikiSpacing.xs),
+              Text(
+                fixedCategory,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -226,22 +253,17 @@ class _DashboardHomeState extends State<DashboardHome> {
       selectedMonth: selected,
     );
 
-    KikiMood mood;
-    if (!hasExpenses) {
-      mood = KikiMood.neutral;
-    } else if (budget.monthlyBudget > 0 && spent >= budget.monthlyBudget) {
-      mood = KikiMood.overbudget;
-    } else if (spent >= budget.monthlyBudget * 0.85) {
-      mood = KikiMood.warning;
-    } else if (spent < budget.monthlyBudget * 0.5) {
-      mood = KikiMood.happy;
-    } else {
-      mood = KikiMood.neutral;
-    }
+    final moodVisual = KikiMoodVisual.fromBudgetState(
+      hasExpenses: hasExpenses,
+      budget: budget.monthlyBudget,
+      spent: spent,
+      achievementsCount: achievements.length,
+      streak: streak,
+    );
 
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(KikiSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -251,9 +273,10 @@ class _DashboardHomeState extends State<DashboardHome> {
             ),
             const SizedBox(height: 16),
             KikiMessageCard(
-              mood: mood,
+              mood: moodVisual.mood,
               message: insight.message,
               actionLabel: insight.actionLabel,
+              avatarId: financialProfile.profile.selectedAvatarId,
               onAction: insight.action == KikiInsightAction.addExpense
                   ? openAddExpense
                   : insight.action == KikiInsightAction.viewExpenses
@@ -267,10 +290,10 @@ class _DashboardHomeState extends State<DashboardHome> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    quickAdd('☕', 'Café'),
-                    quickAdd('🍔', 'Comida'),
-                    quickAdd('🚕', 'Transporte'),
-                    quickAdd('🛒', 'Compras'),
+                    quickAdd('', 'Café'),
+                    quickAdd('', 'Comida'),
+                    quickAdd('', 'Transporte'),
+                    quickAdd('', 'Compras'),
                   ],
                 ),
               ),
@@ -298,15 +321,13 @@ class _DashboardHomeState extends State<DashboardHome> {
                   );
                 }
 
-                return IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(child: KikiScoreCard(score: score)),
-                      const SizedBox(width: 12),
-                      Expanded(child: overviewCard),
-                    ],
-                  ),
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: KikiScoreCard(score: score)),
+                    const SizedBox(width: 12),
+                    Expanded(child: overviewCard),
+                  ],
                 );
               },
             ),
@@ -332,9 +353,13 @@ class _DashboardHomeState extends State<DashboardHome> {
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      const Text('🔥', style: TextStyle(fontSize: 28)),
+                      const Icon(
+                        Icons.local_fire_department_rounded,
+                        color: KikiColors.warning,
+                        size: 28,
+                      ),
                       const SizedBox(width: 12),
-                      Text('$streak días seguidos 🔥'),
+                      Text('$streak días seguidos'),
                     ],
                   ),
                 ),

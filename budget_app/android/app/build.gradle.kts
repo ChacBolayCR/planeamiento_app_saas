@@ -19,14 +19,8 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.josvicdevs.kikifinance"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = "27.0.12077973"
-
-    packaging {
-        jniLibs {
-            keepDebugSymbols += listOf("**/*.so")
-        }
-    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -40,7 +34,7 @@ android {
     defaultConfig {
         applicationId = "com.josvicdevs.kikifinance"
         minSdk = 24
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

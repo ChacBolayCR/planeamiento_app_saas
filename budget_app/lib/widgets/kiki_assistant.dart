@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'kiki_message_card.dart';
+import '../utils/kiki_avatar_assets.dart';
 
 class KikiAssistant extends StatefulWidget {
   final KikiMood mood;
@@ -123,13 +124,24 @@ class _KikiAssistantState extends State<KikiAssistant> {
   String _kikiAssetForMood(KikiMood mood) {
     switch (mood) {
       case KikiMood.happy:
-        return 'assets/images/kiki/kiki_success.png';
+        return KikiAvatarAssets.happy;
       case KikiMood.warning:
-        return 'assets/images/kiki/kiki_warning.png';
+        return KikiAvatarAssets.worried;
       case KikiMood.overbudget:
-        return 'assets/images/kiki/kiki_overbudget.png';
+      case KikiMood.overBudget:
+        return KikiAvatarAssets.sad;
+      case KikiMood.noExpenses:
+        return KikiAvatarAssets.wave;
+      case KikiMood.healthy:
+        return KikiAvatarAssets.happy;
+      case KikiMood.goalProgress:
+        return KikiAvatarAssets.saving;
+      case KikiMood.achievement:
+        return KikiAvatarAssets.celebrating;
+      case KikiMood.inactive:
+        return KikiAvatarAssets.rest;
       case KikiMood.neutral:
-        return 'assets/images/kiki/kiki_neutral.png';
+        return KikiAvatarAssets.neutral;
     }
   }
 
@@ -140,7 +152,13 @@ class _KikiAssistantState extends State<KikiAssistant> {
       case KikiMood.warning:
         return const Color(0xFFE6A93D);
       case KikiMood.overbudget:
+      case KikiMood.overBudget:
         return const Color(0xFFE36A6A);
+      case KikiMood.noExpenses:
+      case KikiMood.healthy:
+      case KikiMood.goalProgress:
+      case KikiMood.achievement:
+      case KikiMood.inactive:
       case KikiMood.neutral:
         return Theme.of(context).colorScheme.primary.withValues(alpha: 0.28);
     }

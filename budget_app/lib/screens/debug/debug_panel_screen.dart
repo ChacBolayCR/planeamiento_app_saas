@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/budget_provider.dart';
+import 'kiki_design_system_screen.dart';
 
 class DebugPanelScreen extends StatelessWidget {
   const DebugPanelScreen({super.key});
@@ -59,6 +60,20 @@ class DebugPanelScreen extends StatelessWidget {
                 const SizedBox(height: 6),
                 const Text('• Úsalo para probar features Pro sin cobrar.'),
                 const Text('• No se muestra en Release.'),
+
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const KikiDesignSystemScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.palette_outlined),
+                  label: const Text('Design System'),
+                ),
 
                 const Spacer(),
 

@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../design_system/components/kiki_button.dart';
+import '../../design_system/components/kiki_card.dart';
+import '../../design_system/kiki_colors.dart';
+import '../../design_system/kiki_spacing.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/kiki_avatar_assets.dart';
+import '../onboarding/onboarding_gate.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -44,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (!mounted) return;
 
-        _showMessage('Cuenta creada ✅ Revisa tu correo.');
+        _showMessage('Cuenta creada. Revisa tu correo.');
 
         setState(() {
           _isRegisterMode = false;
@@ -54,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (!mounted) return;
 
-        Navigator.pushReplacementNamed(context, '/dashboard');
+        _goToEntryGate();
       }
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
@@ -69,12 +75,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      Navigator.pushReplacementNamed(context, '/dashboard');
+      _goToEntryGate();
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
 
       _showMessage(msg);
     }
+  }
+
+  void _goToEntryGate() {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const OnboardingGate()),
+      (_) => false,
+    );
   }
 
   void _showMessage(String text) {
@@ -90,93 +104,92 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final loading = auth.isLoading;
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: KikiColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: KikiSpacing.md),
               Center(
                 child: Image.asset(
-                  'assets/images/kiki/kiki_idle_main_v2.png',
-                  height: 150,
+                  KikiAvatarAssets.wave,
+                  height: 190,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.center,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: KikiSpacing.xl),
               Text(
                 _isRegisterMode
                     ? 'Crea tu cuenta'
                     : 'Bienvenido a Kiki Finance',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: KikiColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: KikiSpacing.sm),
               Text(
                 _isRegisterMode
                     ? 'Registra tu cuenta para guardar tu progreso.'
-                    : 'Controla tus gastos con Kiki 🐾',
+                    : 'Controla tus gastos con Kiki.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.black54),
-              ),
-              const SizedBox(height: 32),
-              TextField(
-                controller: _email,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Correo',
-                  border: OutlineInputBorder(),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: KikiColors.textSecondary,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _pass,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Contraseña',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: loading ? null : _submit,
-                  child: loading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Text(_isRegisterMode ? 'Crear cuenta' : 'Entrar'),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: () {
-                  setState(() => _isRegisterMode = !_isRegisterMode);
-                },
-                child: Text(
-                  _isRegisterMode ? 'Ya tengo cuenta' : 'Crear cuenta',
+              const SizedBox(height: KikiSpacing.xl),
+              KikiCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: _email,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(labelText: 'Correo'),
+                    ),
+                    const SizedBox(height: KikiSpacing.md),
+                    TextField(
+                      controller: _pass,
+                      obscureText: true,
+                      decoration:
+                          const InputDecoration(labelText: 'Contraseña'),
+                    ),
+                    const SizedBox(height: KikiSpacing.lg),
+                    KikiButton(
+                      label: _isRegisterMode ? 'Crear cuenta' : 'Entrar',
+                      onPressed: loading ? null : _submit,
+                      loading: loading,
+                    ),
+                    const SizedBox(height: KikiSpacing.sm),
+                    TextButton(
+                      onPressed: loading
+                          ? null
+                          : () {
+                              setState(
+                                  () => _isRegisterMode = !_isRegisterMode);
+                            },
+                      child: Text(
+                        _isRegisterMode ? 'Ya tengo cuenta' : 'Crear cuenta',
+                      ),
+                    ),
+                  ],
                 ),
               ),
               TextButton(
                 onPressed: loading ? null : _guest,
-                child: const Text(
+                child: Text(
                   'Entrar sin cuenta',
-                  style: TextStyle(color: Colors.black54),
+                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ),
-              const SizedBox(height: 40),
             ],
           ),
         ),

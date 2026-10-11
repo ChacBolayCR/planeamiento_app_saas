@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../models/expense_category.dart';
+import '../models/financial_profile.dart';
+import '../utils/kiki_avatar_assets.dart';
 
 class FinancialProfileOption {
   final String id;
@@ -13,6 +15,22 @@ class FinancialProfileOption {
     required this.label,
     required this.icon,
     this.categoryId,
+  });
+}
+
+class FinancialCompanionOption {
+  final String id;
+  final String name;
+  final String description;
+  final IconData fallbackIcon;
+  final String? assetPath;
+
+  const FinancialCompanionOption({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.fallbackIcon,
+    this.assetPath,
   });
 }
 
@@ -73,7 +91,7 @@ class CategoryCatalog {
     ),
     FinancialProfileOption(
       id: 'expense_food',
-      label: 'Alimentación',
+      label: 'Alimentaci\u00f3n',
       icon: Icons.restaurant_outlined,
       categoryId: 'food',
     ),
@@ -91,7 +109,7 @@ class CategoryCatalog {
     ),
     FinancialProfileOption(
       id: 'expense_education',
-      label: 'Educación',
+      label: 'Educaci\u00f3n',
       icon: Icons.school_outlined,
       categoryId: 'education',
     ),
@@ -103,13 +121,13 @@ class CategoryCatalog {
     ),
     FinancialProfileOption(
       id: 'expense_debt_loans',
-      label: 'Deudas y préstamos',
+      label: 'Deudas y pr\u00e9stamos',
       icon: Icons.account_balance_outlined,
       categoryId: loanCategoryId,
     ),
     FinancialProfileOption(
       id: 'expense_savings_investment',
-      label: 'Ahorro e inversión',
+      label: 'Ahorro e inversi\u00f3n',
       icon: Icons.savings_outlined,
       categoryId: 'savings_investment',
     ),
@@ -141,7 +159,7 @@ class CategoryCatalog {
     ),
     FinancialProfileOption(
       id: 'goal_save_more',
-      label: 'Ahorrar más',
+      label: 'Ahorrar m\u00e1s',
       icon: Icons.savings_outlined,
     ),
     FinancialProfileOption(
@@ -156,13 +174,23 @@ class CategoryCatalog {
     ),
     FinancialProfileOption(
       id: 'goal_understand_spending',
-      label: 'Saber en qué gasto',
+      label: 'Saber en qu\u00e9 gasto',
       icon: Icons.pie_chart_outline,
     ),
     FinancialProfileOption(
       id: 'goal_build_habits',
-      label: 'Crear mejores hábitos financieros',
+      label: 'Crear mejores h\u00e1bitos financieros',
       icon: Icons.auto_awesome_outlined,
+    ),
+  ];
+
+  static const companionOptions = [
+    FinancialCompanionOption(
+      id: FinancialProfile.defaultAvatarId,
+      name: 'Kiki',
+      description: 'Siempre lista para ayudarte.',
+      fallbackIcon: Icons.auto_awesome_outlined,
+      assetPath: KikiAvatarAssets.neutral,
     ),
   ];
 
@@ -173,28 +201,28 @@ class CategoryCatalog {
       'Cuota condominal',
       'Reparaciones',
       'Mantenimiento',
-      'Muebles y electrodomésticos',
+      'Muebles y electrodom\u00e9sticos',
       'Impuestos municipales',
     ]),
     _category('services', 'Servicios', Icons.receipt_long_outlined, [
       'Electricidad',
       'Agua',
       'Internet y cable',
-      'Telefonía',
+      'Telefon\u00eda',
       'Gas',
       'Streaming y suscripciones',
     ]),
-    _category('food', 'Alimentación', Icons.restaurant_outlined, [
+    _category('food', 'Alimentaci\u00f3n', Icons.restaurant_outlined, [
       'Supermercado',
       'Feria',
       'Restaurantes',
-      'Comida rápida',
+      'Comida r\u00e1pida',
       'Pedidos a domicilio',
-      'Café y snacks',
+      'Caf\u00e9 y snacks',
     ]),
     _category('transport', 'Transporte', Icons.directions_car_outlined, [
-      'Combustible o recarga eléctrica',
-      'Transporte público',
+      'Combustible o recarga el\u00e9ctrica',
+      'Transporte p\u00fablico',
       'Peajes',
       'Parqueos',
       'Mantenimiento',
@@ -206,45 +234,46 @@ class CategoryCatalog {
       'Chequeo anual',
       'Consultas',
       'Medicamentos',
-      'Exámenes',
-      'Seguro médico',
-      'Odontología',
+      'Ex\u00e1menes',
+      'Seguro m\u00e9dico',
+      'Odontolog\u00eda',
       'Terapias',
     ]),
-    _category('education', 'Educación', Icons.school_outlined, [
+    _category('education', 'Educaci\u00f3n', Icons.school_outlined, [
       'Mensualidad',
-      'Matrícula',
-      'Útiles',
+      'Matr\u00edcula',
+      '\u00datiles',
       'Uniformes',
       'Cursos',
-      'Guardería',
+      'Guarder\u00eda',
       'Plataformas educativas',
     ]),
     _category('pets', 'Mascotas', Icons.pets_outlined, [
-      'Alimentación',
+      'Alimentaci\u00f3n',
       'Veterinario',
       'Medicamentos',
       'Higiene',
       'Accesorios',
     ]),
-    _category(loanCategoryId, 'Préstamos', Icons.account_balance_outlined, [
+    _category(
+        loanCategoryId, 'Pr\u00e9stamos', Icons.account_balance_outlined, [
       'Compras a cuotas',
-      'Tarjetas de crédito',
-      'Préstamo personal',
-      'Préstamo de vehículo',
-      'Préstamo de vivienda',
+      'Tarjetas de cr\u00e9dito',
+      'Pr\u00e9stamo personal',
+      'Pr\u00e9stamo de veh\u00edculo',
+      'Pr\u00e9stamo de vivienda',
       'Otro',
     ]),
     _category(
-        'savings_investment', 'Ahorro e inversión', Icons.savings_outlined, [
-      'Fondo de emergencia',
-      'Ahorro',
-      'Inversiones',
-    ]),
+      'savings_investment',
+      'Ahorro e inversi\u00f3n',
+      Icons.savings_outlined,
+      ['Fondo de emergencia', 'Ahorro', 'Inversiones'],
+    ),
     _category('personal', 'Personal', Icons.person_outline, [
       'Ropa y calzado',
-      'Barbería o salón',
-      'Cosméticos',
+      'Barber\u00eda o sal\u00f3n',
+      'Cosm\u00e9ticos',
       'Gimnasio',
       'Productos personales',
     ]),
@@ -259,17 +288,17 @@ class CategoryCatalog {
     _category('shopping', 'Compras', Icons.shopping_bag_outlined, [
       'Ropa',
       'Hogar',
-      'Tecnología',
+      'Tecnolog\u00eda',
       'Regalos',
       'Otro',
     ]),
     _category('marketing', 'Marketing', Icons.campaign_outlined, [
       'Publicidad',
-      'Diseño',
+      'Dise\u00f1o',
       'Otro',
     ]),
-    _category('coffee', 'Café', Icons.local_cafe_outlined, [
-      'Café',
+    _category('coffee', 'Caf\u00e9', Icons.local_cafe_outlined, [
+      'Caf\u00e9',
       'Snacks',
       'Otro',
     ]),
@@ -317,8 +346,13 @@ class CategoryCatalog {
   static List<String> categoryIdsForProfileExpenseIds(List<String> ids) {
     final mapped = <String>[];
     for (final id in ids) {
-      final option =
-          expenseProfileOptions.where((item) => item.id == id).firstOrNull;
+      FinancialProfileOption? option;
+      for (final item in expenseProfileOptions) {
+        if (item.id == id) {
+          option = item;
+          break;
+        }
+      }
       final categoryId = option?.categoryId;
       if (categoryId != null && !mapped.contains(categoryId)) {
         mapped.add(categoryId);
@@ -337,6 +371,15 @@ class CategoryCatalog {
     return _labelFor(goalOptions, id);
   }
 
+  static String labelForCompanion(String id) => companionForId(id).name;
+
+  static FinancialCompanionOption companionForId(String id) {
+    return companionOptions.firstWhere(
+      (option) => option.id == id,
+      orElse: () => companionOptions.first,
+    );
+  }
+
   static String _labelFor(List<FinancialProfileOption> options, String id) {
     return options
         .firstWhere(
@@ -352,11 +395,11 @@ class CategoryCatalog {
 
   static bool _legacyCategoryMatches(String categoryId, String key) {
     return switch (categoryId) {
-      'food' => key == 'comida',
+      'food' => key == 'comida' || key == 'alimentacion',
       'housing' => key == 'vivienda' || key == 'alquiler',
       'loans' => key == 'prestamos' || key == 'deudasyprestamos',
       'entertainment' => key == 'entretenimiento',
-      'other' => key == 'otros',
+      'other' => key == 'otros' || key == 'otrosegresos',
       _ => false,
     };
   }
