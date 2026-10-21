@@ -6,6 +6,10 @@ import 'firebase_options.dart';
 
 import 'providers/auth_provider.dart';
 import 'providers/budget_provider.dart';
+import 'providers/category_catalog_provider.dart';
+import 'providers/commitments_provider.dart';
+import 'providers/financial_profile_provider.dart';
+import 'design_system/kiki_theme.dart';
 
 import 'screens/onboarding/onboarding_gate.dart';
 import 'screens/dashboard/dashboard_screen.dart';
@@ -27,10 +31,36 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-
         /// AUTH
         ChangeNotifierProvider(
           create: (_) => AuthProvider(),
+        ),
+
+        /// CATEGORY CATALOG
+        ChangeNotifierProvider(
+          create: (_) {
+            final provider = CategoryCatalogProvider();
+            provider.init();
+            return provider;
+          },
+        ),
+
+        /// COMMITMENTS
+        ChangeNotifierProvider(
+          create: (_) {
+            final provider = CommitmentsProvider();
+            provider.init();
+            return provider;
+          },
+        ),
+
+        /// FINANCIAL PROFILE
+        ChangeNotifierProvider(
+          create: (_) {
+            final provider = FinancialProfileProvider();
+            provider.init();
+            return provider;
+          },
         ),
 
         /// BUDGET
@@ -38,9 +68,7 @@ class MyApp extends StatelessWidget {
           create: (_) {
             final provider = BudgetProvider();
             provider.init();
-
             provider.initPurchases();
-
             return provider;
           },
         ),
@@ -48,16 +76,10 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Kiki Finance',
-
-        theme: ThemeData(
-          useMaterial3: true,
-          colorSchemeSeed: Colors.indigo,
-        ),
-
+        theme: KikiTheme.light(),
         routes: {
           '/dashboard': (_) => const DashboardScreen(),
         },
-
         home: const OnboardingGate(),
       ),
     );

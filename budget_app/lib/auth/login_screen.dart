@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../screens/splash/splash_screen.dart';
 
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -18,7 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _login() async {
     setState(() => _isLoading = true);
 
-    // ⏳ Simulación de login (Free / local)
+    // â³ Simulación de login (Free / local)
     await Future.delayed(const Duration(seconds: 1));
 
     setState(() => _isLoading = false);
@@ -26,10 +25,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => SplashScreen()),
+      context,
+      MaterialPageRoute(builder: (_) => SplashScreen()),
     );
-
   }
 
   @override
@@ -42,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 🧾 Logo / Nombre app
+              // ðŸ§¾ Logo / Nombre app
               const Text(
                 'Kyria',
                 style: TextStyle(
@@ -58,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 40),
 
-              // 📧 Email
+              // ðŸ“§ Email
               TextField(
                 controller: _emailController,
                 decoration: const InputDecoration(
@@ -69,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 16),
 
-              // 🔒 Password
+              // ðŸ”’ Password
               TextField(
                 controller: _passwordController,
                 obscureText: true,
@@ -81,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 24),
 
-              // 🔘 Botón login
+              // ðŸ”˜ Botón login
               SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -98,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 16),
 
-              // 🆓 Modo Free
+              // ðŸ†“ Modo Free
               TextButton(
                 onPressed: _login,
                 child: const Text(

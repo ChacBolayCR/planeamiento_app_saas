@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/budget_provider.dart';
+import '../../providers/commitments_provider.dart';
+import '../../providers/financial_profile_provider.dart';
+import '../../design_system/kiki_colors.dart';
+import '../../design_system/kiki_spacing.dart';
 import '../../services/kiki_insights_service.dart';
 import '../../services/achievement_service.dart';
 
@@ -16,11 +20,14 @@ import '../../widgets/locked_pro_card.dart';
 import '../../widgets/month_selector.dart';
 import '../../widgets/monthly_overview_card.dart';
 import '../../widgets/monthly_trend_chart_card.dart';
+import '../../widgets/monthly_commitments_card.dart';
 import '../../widgets/secret_tap_detector.dart';
+import '../../utils/kiki_mood_visual.dart';
 
 import '../debug/debug_panel_screen.dart';
 import '../expenses/add_expenses_modal.dart';
 import '../expenses/expenses_screen.dart';
+import '../commitments/commitments_screen.dart';
 import '../profile/profile_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -31,7 +38,6 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-
   int _index = 0;
 
   final _pages = const [
@@ -52,50 +58,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
+      backgroundColor: KikiColors.background,
       appBar: const _DashAppBar(),
-
       body: _pages[_index],
-
       floatingActionButton: _index == 0
-        ? FloatingActionButton(
-        onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            useSafeArea: true,
-            builder: (_) => const AddExpenseModal(),
-          );
-        },
-        child: const Icon(Icons.add),
-      )
-      : null,
-
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _index,
-
-        onTap: (i) {
+          ? FloatingActionButton(
+              tooltip: 'Agregar gasto',
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  useSafeArea: true,
+                  builder: (_) => const AddExpenseModal(),
+                );
+              },
+              child: const Icon(Icons.add),
+            )
+          : null,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (i) {
           setState(() {
             _index = i;
           });
         },
-
-        items: const [
-
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: "Dashboard",
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.dashboard_rounded),
+            label: 'Dashboard',
           ),
-
-          BottomNavigationBarItem(
-            icon: Icon(Icons.receipt_long),
-            label: "Gastos",
+          NavigationDestination(
+            icon: Icon(Icons.receipt_long_rounded),
+            label: 'Gastos',
           ),
-
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "Perfil",
+          NavigationDestination(
+            icon: Icon(Icons.person_rounded),
+            label: 'Perfil',
           ),
         ],
       ),
@@ -118,7 +117,7 @@ class _DashAppBar extends StatelessWidget implements PreferredSizeWidget {
             MaterialPageRoute(builder: (_) => const DebugPanelScreen()),
           );
         },
-        child: const Text('Kiki Budget'),
+        child: const Text('Kiki Finance'),
       ),
       automaticallyImplyLeading: false,
     );
@@ -136,7 +135,6 @@ class DashboardHome extends StatefulWidget {
 }
 
 class _DashboardHomeState extends State<DashboardHome> {
-
   bool _isSameMonth(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month;
   }
@@ -144,14 +142,14 @@ class _DashboardHomeState extends State<DashboardHome> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    /// 🔥 Esto fuerza rebuild cuando cambia isPro
     context.watch<BudgetProvider>().isPro;
   }
 
   @override
   Widget build(BuildContext context) {
     final budget = context.watch<BudgetProvider>();
+    final commitmentsProvider = context.watch<CommitmentsProvider>();
+    final financialProfile = context.watch<FinancialProfileProvider>();
 
     final selected = budget.selectedMonthDate;
     final now = DateTime.now();
@@ -176,13 +174,10 @@ class _DashboardHomeState extends State<DashboardHome> {
       expenses: monthExpenses,
     );
 
-    final dailyInsight =
-        KikiInsightsService.buildDailyInsight(monthExpenses);
+    final dailyInsight = KikiInsightsService.buildDailyInsight(monthExpenses);
 
-    final achievements = AchievementService
-        .evaluate(budget)
-        .where((a) => a.unlocked)
-        .toList();
+    final achievements =
+        AchievementService.evaluate(budget).where((a) => a.unlocked).toList();
 
     final streak = StreakService.calculateStreak(monthExpenses);
 
@@ -202,22 +197,42 @@ class _DashboardHomeState extends State<DashboardHome> {
       );
     }
 
-    Widget quickAdd(String emoji, String category) {
-      return GestureDetector(
+    Widget quickAdd(String _, String category) {
+      final fixedCategory = category.startsWith('Caf') ? 'Café' : category;
+      final icon = switch (fixedCategory) {
+        'Café' => Icons.local_cafe_rounded,
+        'Comida' => Icons.restaurant_rounded,
+        'Transporte' => Icons.directions_car_rounded,
+        'Compras' => Icons.shopping_bag_rounded,
+        _ => Icons.add_circle_outline_rounded,
+      };
+
+      return InkWell(
+        borderRadius: BorderRadius.circular(16),
         onTap: () {
           showModalBottomSheet(
             context: context,
             isScrollControlled: true,
-            builder: (_) =>
-                AddExpenseModal(prefilledCategory: category),
+            useSafeArea: true,
+            builder: (_) => AddExpenseModal(prefilledCategory: fixedCategory),
           );
         },
-        child: Column(
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 26)),
-            const SizedBox(height: 4),
-            Text(category, style: const TextStyle(fontSize: 12)),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: KikiSpacing.sm,
+            horizontal: KikiSpacing.xs,
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: KikiColors.primary, size: 26),
+              const SizedBox(height: KikiSpacing.xs),
+              Text(
+                fixedCategory,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -238,109 +253,119 @@ class _DashboardHomeState extends State<DashboardHome> {
       selectedMonth: selected,
     );
 
-    KikiMood mood;
-    if (!hasExpenses) {
-      mood = KikiMood.neutral;
-    } else if (budget.monthlyBudget > 0 &&
-        spent >= budget.monthlyBudget) {
-      mood = KikiMood.overbudget;
-    } else if (spent >= budget.monthlyBudget * 0.85) {
-      mood = KikiMood.warning;
-    } else if (spent < budget.monthlyBudget * 0.5) {
-      mood = KikiMood.happy;
-    } else {
-      mood = KikiMood.neutral;
-    }
+    final moodVisual = KikiMoodVisual.fromBudgetState(
+      hasExpenses: hasExpenses,
+      budget: budget.monthlyBudget,
+      spent: spent,
+      achievementsCount: achievements.length,
+      streak: streak,
+    );
 
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(KikiSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-
             MonthSelector(
               selectedMonth: selected,
               onChanged: budget.setSelectedMonthDate,
             ),
-
             const SizedBox(height: 16),
-
             KikiMessageCard(
-              mood: mood,
+              mood: moodVisual.mood,
               message: insight.message,
               actionLabel: insight.actionLabel,
+              avatarId: financialProfile.profile.selectedAvatarId,
               onAction: insight.action == KikiInsightAction.addExpense
                   ? openAddExpense
                   : insight.action == KikiInsightAction.viewExpenses
                       ? openExpenses
                       : null,
             ),
-
             const SizedBox(height: 16),
-
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    quickAdd("☕", "Café"),
-                    quickAdd("🍔", "Comida"),
-                    quickAdd("🚕", "Transporte"),
-                    quickAdd("🛒", "Compras"),
+                    quickAdd('', 'Café'),
+                    quickAdd('', 'Comida'),
+                    quickAdd('', 'Transporte'),
+                    quickAdd('', 'Compras'),
                   ],
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final textScale = MediaQuery.textScalerOf(context).scale(1);
+                final useHorizontalLayout =
+                    constraints.maxWidth >= 680 && textScale <= 1.15;
+                final overviewCard = MonthlyOverviewCard(
+                  budget: budget.monthlyBudget,
+                  spent: spent,
+                  currencySymbol: budget.currencySymbol,
+                );
 
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 140,
-                    child: KikiScoreCard(score: score),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: SizedBox(
-                    height: 140,
-                    child: MonthlyOverviewCard(
-                      budget: budget.monthlyBudget,
-                      spent: spent,
-                      currencySymbol: budget.currencySymbol,
-                    ),
-                  ),
-                ),
-              ],
+                if (!useHorizontalLayout) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      KikiScoreCard(score: score),
+                      const SizedBox(height: 12),
+                      overviewCard,
+                    ],
+                  );
+                }
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: KikiScoreCard(score: score)),
+                    const SizedBox(width: 12),
+                    Expanded(child: overviewCard),
+                  ],
+                );
+              },
             ),
-
             const SizedBox(height: 16),
-
+            MonthlyCommitmentsCard(
+              commitments: commitmentsProvider.getCommitmentsForMonth(selected),
+              currencySymbol: budget.currencySymbol,
+              onViewAll: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CommitmentsScreen()),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
             if (achievements.isNotEmpty) ...[
               AchievementsCard(achievements: achievements),
               const SizedBox(height: 16),
             ],
-
             if (streak >= 2) ...[
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: [
-                      const Text("🔥", style: TextStyle(fontSize: 28)),
+                      const Icon(
+                        Icons.local_fire_department_rounded,
+                        color: KikiColors.warning,
+                        size: 28,
+                      ),
                       const SizedBox(width: 12),
-                      Text("$streak días seguidos 🔥"),
+                      Text('$streak días seguidos'),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 16),
             ],
-
             if (hasExpenses) ...[
               DominantCategoryCard(
                 category: dominant,
@@ -349,7 +374,6 @@ class _DashboardHomeState extends State<DashboardHome> {
               ),
               const SizedBox(height: 16),
             ],
-
             if (hasExpenses) ...[
               Card(
                 child: Padding(
@@ -365,13 +389,11 @@ class _DashboardHomeState extends State<DashboardHome> {
               ),
               const SizedBox(height: 16),
             ],
-
-            /// 🔥 PRO FIX
             AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
               child: budget.isPro
                   ? Column(
-                      key: const ValueKey("pro"),
+                      key: const ValueKey('pro'),
                       children: [
                         CategoryBarChartCard(
                           expenses: monthExpenses,
@@ -382,12 +404,11 @@ class _DashboardHomeState extends State<DashboardHome> {
                       ],
                     )
                   : const LockedProCard(
-                      key: ValueKey("free"),
+                      key: ValueKey('free'),
                       title: 'Desbloquea Kiki Pro',
                       subtitle: 'Gráficos, tendencias y coaching avanzado.',
                     ),
             ),
-
             const SizedBox(height: 40),
           ],
         ),

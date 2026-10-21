@@ -17,7 +17,8 @@ class MonthSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = _monthStart(DateTime.now());
-    final isCurrent = selectedMonth.year == now.year && selectedMonth.month == now.month;
+    final isCurrent =
+        selectedMonth.year == now.year && selectedMonth.month == now.month;
 
     final prev = DateTime(selectedMonth.year, selectedMonth.month - 1, 1);
     final next = DateTime(selectedMonth.year, selectedMonth.month + 1, 1);
@@ -29,7 +30,7 @@ class MonthSelector extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
           )
         ],
@@ -41,7 +42,6 @@ class MonthSelector extends StatelessWidget {
             onPressed: () => onChanged(prev),
             icon: const Icon(Icons.chevron_left),
           ),
-
           Expanded(
             child: InkWell(
               borderRadius: BorderRadius.circular(10),
@@ -60,7 +60,6 @@ class MonthSelector extends StatelessWidget {
               ),
             ),
           ),
-
           if (!isCurrent)
             TextButton.icon(
               onPressed: () => onChanged(now),
@@ -69,7 +68,6 @@ class MonthSelector extends StatelessWidget {
             )
           else
             const SizedBox(width: 8),
-
           IconButton(
             tooltip: 'Mes siguiente',
             onPressed: () => onChanged(next),
@@ -99,7 +97,8 @@ class _MonthPickerSheet extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Selecciona mes', style: TextStyle(fontWeight: FontWeight.w700)),
+            const Text('Selecciona mes',
+                style: TextStyle(fontWeight: FontWeight.w700)),
             const SizedBox(height: 12),
             ListTile(
               leading: const Icon(Icons.chevron_left),

@@ -26,21 +26,19 @@ class _UpgradeProScreenState extends State<UpgradeProScreen> {
       body: SafeArea(
         child: Column(
           children: [
-
-            /// 🔽 CONTENIDO
+            /// ðŸ”½ CONTENIDO
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-
-                    /// 🧠 HEADER
+                    /// ðŸ§  HEADER
                     _Header(theme: theme),
 
                     const SizedBox(height: 16),
 
-                    /// 💎 FEATURES
+                    /// ðŸ’Ž FEATURES
                     const _ProFeatureTile(
                       icon: Icons.all_inclusive_rounded,
                       title: 'Gastos ilimitados',
@@ -70,7 +68,7 @@ class _UpgradeProScreenState extends State<UpgradeProScreen> {
 
                     const SizedBox(height: 20),
 
-                    /// 🧪 TRIAL INFO
+                    /// ðŸ§ª TRIAL INFO
                     if (budget.isTrialActive)
                       _TrialBanner(daysLeft: budget.trialDaysLeft),
 
@@ -80,49 +78,48 @@ class _UpgradeProScreenState extends State<UpgradeProScreen> {
               ),
             ),
 
-            /// 🔻 FOOTER
+            /// ðŸ”» FOOTER
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-
-                  /// 🚀 BOTÓN PRINCIPAL
+                  /// ðŸš€ BOTÃ“N PRINCIPAL
                   SizedBox(
-  width: double.infinity,
-  height: 54,
-  child: ElevatedButton(
-    onPressed: (_loading || budget.isPro)
-        ? null
-        : () async {
-            setState(() => _loading = true);
+                    width: double.infinity,
+                    height: 54,
+                    child: ElevatedButton(
+                      onPressed: (_loading || budget.isPro)
+                          ? null
+                          : () async {
+                              setState(() => _loading = true);
 
-            await budget.buyPro();
+                              await budget.buyPro();
 
-            setState(() => _loading = false);
+                              if (!context.mounted) return;
 
-            if (!mounted) return;
+                              setState(() => _loading = false);
 
-            _showSnack('🎉 Pro activado');
+                              _showSnack('ðŸŽ‰ Pro activado');
 
-            Navigator.pop(context);
-          },
-    child: _loading
-        ? const SizedBox(
-            height: 20,
-            width: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
-        : Text(
-            budget.isPro
-                ? 'Has debloqueado Kiki Pro ✅'
-                : 'Probar 7 días gratis',
-          ),
-  ),
-),
+                              Navigator.pop(context);
+                            },
+                      child: _loading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(
+                              budget.isPro
+                                  ? 'Has debloqueado Kiki Pro âœ…'
+                                  : 'Probar 7 días gratis',
+                            ),
+                    ),
+                  ),
 
                   const SizedBox(height: 12),
 
-                  /// 🔄 RESTORE
+                  /// ðŸ”„ RESTORE
                   TextButton(
                     onPressed: _restoring
                         ? null
@@ -146,7 +143,7 @@ class _UpgradeProScreenState extends State<UpgradeProScreen> {
 
                   const SizedBox(height: 6),
 
-                  /// 🧾 DISCLAIMER
+                  /// ðŸ§¾ DISCLAIMER
                   const Text(
                     'Suscripción mensual. Cancela en cualquier momento.',
                     textAlign: TextAlign.center,
@@ -188,7 +185,7 @@ class _Header extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.12),
+                color: theme.colorScheme.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Icon(
@@ -199,7 +196,7 @@ class _Header extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Kiki Pro ✨',
+              'Kiki Pro âœ¨',
               style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w900,
               ),
@@ -228,7 +225,7 @@ class _TrialBanner extends StatelessWidget {
 
     return Card(
       elevation: 0,
-      color: theme.colorScheme.primary.withOpacity(0.08),
+      color: theme.colorScheme.primary.withValues(alpha: 0.08),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Text(
@@ -268,7 +265,7 @@ class _ProFeatureTile extends StatelessWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.10),
+                color: theme.colorScheme.primary.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
@@ -277,7 +274,6 @@ class _ProFeatureTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

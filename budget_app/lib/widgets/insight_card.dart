@@ -15,11 +15,11 @@ class InsightCard extends StatelessWidget {
     String message;
 
     if (percentUsed < 0.5) {
-      message = 'Vas muy bien 💚 sigue así.';
+      message = 'Vas muy bien ðŸ’š sigue así.';
     } else if (percentUsed < 0.8) {
-      message = 'Ojo 👀 ya llevas más de la mitad.';
+      message = 'Ojo ðŸ‘€ ya llevas más de la mitad.';
     } else {
-      message = 'Cuidado 😿 estás cerca del límite.';
+      message = 'Cuidado ðŸ˜¿ estás cerca del límite.';
     }
 
     return Card(

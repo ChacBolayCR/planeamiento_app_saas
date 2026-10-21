@@ -22,7 +22,7 @@ class KikiTheme {
       ),
       cardTheme: CardThemeData(
         elevation: 0,
-        color: Colors.white.withOpacity(0.92),
+        color: Colors.white.withValues(alpha: 0.92),
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),

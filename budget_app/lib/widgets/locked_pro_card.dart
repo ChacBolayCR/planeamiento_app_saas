@@ -29,7 +29,7 @@ class LockedProCard extends StatelessWidget {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: t.colorScheme.primary.withOpacity(0.10),
+                    color: t.colorScheme.primary.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(

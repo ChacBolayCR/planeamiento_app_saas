@@ -40,10 +40,10 @@ class CategoryBarChartCard extends StatelessWidget {
           children: [
             Text(
               'Gastos por categoría',
-              style: t.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+              style: t.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 12),
-
             ...top.map((e) {
               final ratio = (e.value / maxVal).clamp(0.0, 1.0);
 
@@ -89,14 +89,16 @@ class _BarRow extends StatelessWidget {
             Expanded(
               child: Text(
                 label,
-                style: t.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                style: t.textTheme.bodyMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             const SizedBox(width: 12),
             Text(
               '$currencySymbol ${value.toStringAsFixed(0)}',
-              style: t.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
+              style:
+                  t.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800),
             ),
           ],
         ),
@@ -109,7 +111,7 @@ class _BarRow extends StatelessWidget {
                 Container(
                   height: 10,
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),

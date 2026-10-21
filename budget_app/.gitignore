@@ -1,6 +1,11 @@
 # Miscellaneous
 *.class
 *.log
+*.env
+.env
+.env.*
+*.dump
+*.dmp
 *.pyc
 *.swp
 .DS_Store
@@ -43,3 +48,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Release signing helpers. Never commit generated key material or encoded keys.
+keystore-base64.txt
+**/keystore-base64.txt
+*.hprof

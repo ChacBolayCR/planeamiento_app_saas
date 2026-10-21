@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import 'screens/auth/auth_gate.dart';
 import 'theme/kiki_theme.dart';
@@ -10,7 +10,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Kiki Personal Budget',
+      title: 'Kiki Finance',
       themeMode: ThemeMode.light,
       theme: KikiTheme.light(),
       home: const AuthGate(),
